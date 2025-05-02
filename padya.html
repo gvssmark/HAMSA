@@ -90,12 +90,23 @@
         display: none;
       }
     }
+    
+    .blinking {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
   </style>
 </head>
 <body>
 
 <div class="chat-wrapper">
-  <h2>పద్యసౌందర్యం</h2>
+  <h2 id="pageTitle" class="blinking">పద్యసౌందర్యం</h2>
+
   <button class="hamburger" onclick="toggleFilters()">☰ Filters</button>
 
   <div class="filters" id="filtersPanel">
@@ -138,6 +149,8 @@ window.onload = async function () {
     renderMessages();
   } catch (e) {
     chatOutput.innerHTML = '<p style="color:red;">Error loading chat data.</p>';
+  } finally {
+    document.getElementById("pageTitle").classList.remove("blinking");
   }
 };
 
