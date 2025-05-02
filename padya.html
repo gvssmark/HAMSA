@@ -5,43 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WhatsApp Chat Viewer</title>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 0; width:100%; }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+    }
 
-    .loader { display: none; font-weight: bold; padding: 20px; }
+    .loader {
+      display: none;
+      font-weight: bold;
+      padding: 20px;
+    }
 
     .chat-wrapper {
-      padding: 10px 15px 13px;
+      position: static;
+      padding: 10px 15px;
       background: #fafafa;
       border-bottom: 1px solid #ccc;
     }
 
     h2 {
-      margin: 0;
-    }
-
-    .hamburger {
-      font-size: 24px;
-      cursor: pointer;
-      border: none;
-      background: none;
-      padding: 10px 0;
+      margin-top: 0;
+      margin-bottom: 10px;
     }
 
     .filters {
-      display: none;
-      flex-direction: column;
-      gap: 10px;
-      padding-top: 10px;
-    }
-
-    .filters input, .filters select, .filters button {
-      padding: 8px;
-      font-size: 16px;
-      width: 100%;
-    }
-
-    .filters.show {
       display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .filters input,
+    .filters select,
+    .filters button {
+      padding: 8px;
+      font-size: 14px;
+      flex: 1 1 100%;
+      max-width: 100%;
+    }
+
+    .scroll-buttons {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .scroll-buttons button {
+      padding: 6px 12px;
+      font-size: 14px;
+      flex: 1 1 45%;
     }
 
     .chat-container {
@@ -57,6 +75,7 @@
       margin-bottom: 10px;
       white-space: pre-wrap;
       background-color: #f0f0f0;
+      word-wrap: break-word;
     }
 
     small {
@@ -65,182 +84,142 @@
       display: block;
       margin-top: 5px;
     }
-
-    .scroll-buttons {
-      margin-top: 10px;
-    }
-
-    .scroll-buttons button {
-      margin-right: 10px;
-      padding: 5px 10px;
-    }
-
-    @media (min-width: 768px) {
-      .filters {
-        display: flex !important;
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
-
-      .filters input, .filters select, .filters button {
-        width: auto;
-      }
-
-      .hamburger {
-        display: none;
-      }
-    }
-    
-    .blinking {
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
   </style>
 </head>
 <body>
+  <div class="chat-wrapper">
+    <h2>పద్యసౌందర్యం</h2>
+    <div class="loader" id="loader">Loading chat data...</div>
 
-<div class="chat-wrapper">
-  <h2 id="pageTitle" class="blinking">పద్యసౌందర్యం</h2>
+    <div class="filters">
+      <input type="text" id="searchText" placeholder="Search text..." oninput="renderMessages()" />
+      <select id="searchSender" onchange="renderMessages()">
+        <option value="">All Senders</option>
+      </select>
+      <input type="date" id="searchDate" onchange="renderMessages()" />
+      <button onclick="clearFilters()">Clear All Filters</button>
+    </div>
 
-  <button class="hamburger" onclick="toggleFilters()">☰ Filters</button>
-
-  <div class="filters" id="filtersPanel">
-    <input type="text" id="searchText" placeholder="Search text..." oninput="renderMessages()" />
-    <select id="searchSender" onchange="renderMessages()">
-      <option value="">All Senders</option>
-    </select>
-    <input type="date" id="searchDate" onchange="renderMessages()" />
-    <button onclick="clearFilters()">Clear All Filters</button>
+    <div class="scroll-buttons">
+      <button onclick="scrollToTop()">🔼 Go Up</button>
+      <button onclick="scrollToBottom()">🔽 Go Down</button>
+    </div>
   </div>
 
-  <div class="scroll-buttons">
-    <button onclick="scrollToTop()">🔼 Go Up</button>
-    <button onclick="scrollToBottom()">🔽 Go Down</button>
-  </div>
-</div>
+  <div id="chatOutput" class="chat-container"></div>
 
-<div id="chatOutput" class="chat-container"></div>
+  <!-- JavaScript remains the same -->
+  <script>
+    const chatOutput = document.getElementById('chatOutput');
+    const loader = document.getElementById('loader');
+    const senderSelect = document.getElementById('searchSender');
+    const dateInput = document.getElementById('searchDate');
+    const textInput = document.getElementById('searchText');
 
-<script>
-function toggleFilters() {
-  document.getElementById("filtersPanel").classList.toggle("show");
-}
+    let allMessages = [];
 
-const chatOutput = document.getElementById('chatOutput');
-const loader = document.getElementById('loader');
-const senderSelect = document.getElementById('searchSender');
-const dateInput = document.getElementById('searchDate');
-const textInput = document.getElementById('searchText');
+    window.onload = async function () {
+      loader.style.display = 'block';
+      try {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbzO0VoBQ9biG0JX1agil02llkEBElKkVIhoZTkux5dJvlAQ5EIK--K_dguOWgrMsdzVjQ/exec');
+        const data = await response.json();
+        allMessages = parseRawMessages(data);
+        populateSenderDropdown(allMessages);
+        setupDateRange(allMessages);
+        renderMessages();
+      } catch (e) {
+        chatOutput.innerHTML = '<p style="color:red;">Error loading chat data.</p>';
+      } finally {
+        loader.style.display = 'none';
+      }
+    };
 
-let allMessages = [];
+    function parseRawMessages(data) {
+      const regex = /^\[(\d{2})\/(\d{2})\/(\d{4}), (\d{2}):(\d{2}):(\d{2})\] ~?\s?\u202f?(.*?): (.*)/s;
+      let parsed = [];
+      let current = null;
 
-window.onload = async function () {
-  try {
-    const response = await fetch('https://script.google.com/macros/s/AKfycbzO0VoBQ9biG0JX1agil02llkEBElKkVIhoZTkux5dJvlAQ5EIK--K_dguOWgrMsdzVjQ/exec');
-    const data = await response.json();
-    allMessages = parseRawMessages(data);
-    populateSenderDropdown(allMessages);
-    setupDateRange(allMessages);
-    renderMessages();
-  } catch (e) {
-    chatOutput.innerHTML = '<p style="color:red;">Error loading chat data.</p>';
-  } finally {
-    document.getElementById("pageTitle").classList.remove("blinking");
-  }
-};
+      data.forEach(row => {
+        if (!Array.isArray(row) || typeof row[0] !== 'string') return;
 
-function parseRawMessages(data) {
-  const regex = /^\[(\d{2})\/(\d{2})\/(\d{4}), (\d{2}):(\d{2}):(\d{2})\] ~?\s?\u202f?(.*?): (.*)/s;
-  let parsed = [];
-  let current = null;
+        const line = row[0];
+        const match = line.match(regex);
 
-  data.forEach(row => {
-    if (!Array.isArray(row) || typeof row[0] !== 'string') return;
+        if (match) {
+          if (current) parsed.push(current);
+          const [_, day, month, year, hour, minute, second, sender, message] = match;
+          const date = `${day}/${month}/${year}`;
+          const isoDate = `${year}-${month}-${day}`;
+          const time = `${hour}:${minute}:${second}`;
+          current = { date, isoDate, time, sender, message };
+        } else if (current) {
+          current.message += '\n' + line;
+        }
+      });
 
-    const line = row[0];
-    const match = line.match(regex);
-
-    if (match) {
       if (current) parsed.push(current);
-      const [_, day, month, year, hour, minute, second, sender, message] = match;
-      const date = `${day}/${month}/${year}`;
-      const isoDate = `${year}-${month}-${day}`;
-      const time = `${hour}:${minute}:${second}`;
-      current = { date, isoDate, time, sender, message };
-    } else if (current) {
-      current.message += '\n' + line;
+      return parsed;
     }
-  });
 
-  if (current) parsed.push(current);
-  return parsed;
-}
+    function populateSenderDropdown(messages) {
+      const senders = [...new Set(messages.map(m => m.sender))].sort();
+      senderSelect.innerHTML = '<option value="">All Senders</option>';
+      senders.forEach(sender => {
+        const option = document.createElement('option');
+        option.value = sender;
+        option.textContent = sender;
+        senderSelect.appendChild(option);
+      });
+    }
 
-function populateSenderDropdown(messages) {
-  const senders = [...new Set(messages.map(m => m.sender))].sort();
-  senderSelect.innerHTML = '<option value="">All Senders</option>';
-  senders.forEach(sender => {
-    const option = document.createElement('option');
-    option.value = sender;
-    option.textContent = sender;
-    senderSelect.appendChild(option);
-  });
-}
+    function setupDateRange(messages) {
+      const dates = messages.map(m => m.isoDate);
+      const minDate = dates.reduce((a, b) => a < b ? a : b);
+      const maxDate = dates.reduce((a, b) => a > b ? a : b);
+      dateInput.min = minDate;
+      dateInput.max = maxDate;
+    }
 
-function setupDateRange(messages) {
-  const dates = messages.map(m => m.isoDate);
-  const minDate = dates.reduce((a, b) => a < b ? a : b);
-  const maxDate = dates.reduce((a, b) => a > b ? a : b);
-  dateInput.min = minDate;
-  dateInput.max = maxDate;
-}
+    function renderMessages() {
+      const textFilter = textInput.value.toLowerCase();
+      const senderFilter = senderSelect.value;
+      const dateFilter = dateInput.value;
 
-function renderMessages() {
-  const textFilter = textInput.value.toLowerCase();
-  const senderFilter = senderSelect.value;
-  const dateFilter = dateInput.value;
+      chatOutput.innerHTML = '';
 
-  chatOutput.innerHTML = '';
+      const filtered = allMessages.filter(msg =>
+        (!textFilter || msg.message.toLowerCase().includes(textFilter)) &&
+        (!senderFilter || msg.sender === senderFilter) &&
+        (!dateFilter || msg.isoDate === dateFilter)
+      );
 
-  const filtered = allMessages.filter(msg =>
-    (!textFilter || msg.message.toLowerCase().includes(textFilter)) &&
-    (!senderFilter || msg.sender === senderFilter) &&
-    (!dateFilter || msg.isoDate === dateFilter)
-  );
+      if (filtered.length === 0) {
+        chatOutput.innerHTML = '<p>No messages found.</p>';
+        return;
+      }
 
-  if (filtered.length === 0) {
-    chatOutput.innerHTML = '<p>No messages found.</p>';
-    return;
-  }
+      filtered.forEach(({ sender, message, date, time }) => {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.innerHTML = `<strong>${sender}</strong><br>${message}<small>${date} ${time}</small>`;
+        chatOutput.appendChild(div);
+      });
+    }
 
-  filtered.forEach(({ sender, message, date, time }) => {
-    const div = document.createElement('div');
-    div.className = 'message';
-    div.innerHTML = `<strong>${sender}</strong><br>${message}<small>${date} ${time}</small>`;
-    chatOutput.appendChild(div);
-  });
-}
+    function clearFilters() {
+      textInput.value = '';
+      senderSelect.value = '';
+      dateInput.value = '';
+      renderMessages();
+    }
 
-function clearFilters() {
-  textInput.value = '';
-  senderSelect.value = '';
-  dateInput.value = '';
-  renderMessages();
-}
+    function scrollToTop() {
+      chatOutput.scrollTop = 0;
+    }
 
-function scrollToTop() {
-  chatOutput.scrollTop = 0;
-}
-
-function scrollToBottom() {
-  chatOutput.scrollTop = chatOutput.scrollHeight;
-}
-</script>
-
+    function scrollToBottom() {
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+    }
+  </script>
 </body>
 </html>
