@@ -90,7 +90,7 @@
       bottom: 50px;
     }
     .sender {
-      color: red;
+      color: red; font-weight:bold;
     }
   </style>
 </head>
@@ -163,7 +163,7 @@
     }
 
     function showTopics() {
-      const uniqueTopics = [...new Set(allMessages.map(m => m.topic))].sort();
+      const uniqueTopics = [...new Set(allMessages.map(m => m.topic))].sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]));
       topicList.innerHTML = uniqueTopics.map(t => `<div class="topic-item" onclick="showMessages('${t}')">${t}</div>`).join('');
       backButton.style.display = 'none';
     }
