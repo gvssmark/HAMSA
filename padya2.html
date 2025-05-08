@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,6 +94,19 @@
       color: red; font-weight:bold;
     }
     blue {color:blue; font-weight:bold; }
+    
+      @media print {
+  .chat-container {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+   #goUp, #goDown, .toggle-chat, .topic-list, .loader {
+    display: none !important;
+  }
+  .print-header {
+    display: block;
+    position: running(header);
+  }
   </style>
 </head>
 <body>
@@ -103,7 +117,7 @@
   </div>
 
   <div class="toggle-chat" id="backButton">
-    <button onclick="toggleTopicView()">Back to Topics</button>
+    <button onclick="toggleTopicView()">Back to Topics</button> <button onclick="printTopic()">Print</button>
   </div>
 
   <div class="chat-container" id="chatOutput" style="display:none;"></div>
@@ -174,7 +188,7 @@
       chatOutput.style.display = 'block';
       backButton.style.display = 'block';
       chatOutput.innerHTML = `<h2>పద్యసౌందర్యం - ${topic}</h2>`;
-      const filtered = allMessages.filter(m => m.topic === topic);
+      const filtered = topic === "0. అన్ని సందేశాలు" ? allMessages : allMessages.filter(m => m.topic === topic);
       filtered.forEach(({ sender, message, date, time }) => {
         const div = document.createElement('div');
         div.className = 'message';
@@ -203,6 +217,12 @@
       goUpBtn.style.display = chatOutput.scrollTop > threshold ? 'block' : 'none';
       goDownBtn.style.display = (chatOutput.scrollTop + chatOutput.clientHeight < chatOutput.scrollHeight - threshold) ? 'block' : 'none';
     });
+    
+    function printTopic() {
+   
+    window.print();
+  }
+    
   </script>
 </body>
 </html>
