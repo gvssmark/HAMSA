@@ -195,6 +195,7 @@
         div.innerHTML = `<div class="sender">${sender}</div>${message}<small>${date} ${time}</small>`;
         chatOutput.appendChild(div);
       });
+       chatOutput.scrollTop = 0;
     }
 
     function toggleTopicView() {
