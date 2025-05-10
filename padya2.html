@@ -1,22 +1,23 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple">
   <title>WhatsApp Chat Viewer</title>
   <style>
     * {
       box-sizing: border-box;
     }
     body {
-      font-family: sans-serif;
+      font-familyx: sans-serif;
       font-size: small;
       margin: 0;
       padding: 0;
       width: 100%;
       overflow-x: hidden;
+      font-family: "Sofia", sans-serif;
+  font-size: 16px;
     }
     .loader {
       font-weight: bold;
@@ -28,7 +29,7 @@
       background: #fafafa;
       border-bottom: 1px solid #ccc;
     }
-    h2 {
+    h2 {text-align: center;
       margin: 10px 0;
     }
     .filters, .scroll-buttons {
@@ -108,11 +109,12 @@
     display: block;
     position: running(header);
   }
+  
   </style>
 </head>
 <body>
   <div class="chat-wrapper" id="chatWrapper">
-    <h2>పద్యసౌందర్యం</h2>
+    <h2 class="font-effect-outline">పద్యసౌందర్యం</h2>
     <div class="loader" id="loader">Loading chat data...</div>
     <div class="topic-list" id="topicList"></div>
   </div>
@@ -190,7 +192,7 @@
       chatWrapper.style.display = 'none';
       chatOutput.style.display = 'block';
       backButton.style.display = 'block';
-      chatOutput.innerHTML = `<h2>పద్యసౌందర్యం - ${topic}</h2>`;
+      chatOutput.innerHTML = `<h2 class="font-effect-outline">పద్యసౌందర్యం <br> ${topic}</h2>`;
       filtered =allMessages.filter(m => m.topic === topic)
       
        topic === "24. వ్యాకరణ అంశాలు " ?   filtered = allMessages.filter(m => (m.subtopic === topic || m.topic === topic)) : ""
