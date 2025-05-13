@@ -238,7 +238,7 @@ function showMessages(topic) {
   chatWrapper.style.display = 'none';
   chatOutput.style.display = 'block';
   backButton.style.display = 'block';
-  chatOutput.innerHTML = `<h6 class="font-effect-outline">పద్యసౌందర్యం <br> ${topic}</h6>`;
+  chatOutput.innerHTML = `<h6 >పద్యసౌందర్యం <br> ${topic}</h6>`;
 
   let filtered = allMessages.filter(m => m.topics.includes(topic));
 
@@ -259,7 +259,7 @@ function showMessages(topic) {
   chatWrapper.style.display = 'none';
   chatOutput.style.display = 'block';
   backButton.style.display = 'block';
-  chatOutput.innerHTML = `<h2 class="font-effect-outline">పద్యసౌందర్యం <br> Messages by ${sender}</h2>`;
+  chatOutput.innerHTML = `<h6 >పద్యసౌందర్యం <br> Messages by ${sender}</h6>`;
 
   const filtered = allMessages.filter(m => m.sender === sender);
 
