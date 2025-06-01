@@ -260,6 +260,12 @@ function showMessages(topic) {
     const div = document.createElement('div');
     div.className = 'message';
     div.innerHTML = `<div class="sender">${sender}</div>${message}<small>${date} ${time} </small>`
+
+	  if (topic === "0. అన్ని సందేశాలు") {
+    div.innerHTML = `<div class="sender">${sender}</div>${message}<small>${date} ${time} in ${subtopic} </small>`
+
+  }
+
     chatOutput.appendChild(div);
   });
   chatOutput.scrollTop = 0;
