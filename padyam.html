@@ -1,155 +1,208 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple">
-  <title>WhatsApp Chat Viewer</title>
+  
+  <title>పద్యసౌందర్యం</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      font-familyx: sans-serif;
-      font-size: small;
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      overflow-x: hidden;
-      font-family: "Sofia", sans-serif;
-  font-size: 16px;
-    }
-    .loader {
-      font-weight: bold;
-      padding: 20px;
-      text-align: center;
-    }
-    .chat-wrapper {
-      padding: 10px 15px;
-      background: #fafafa;
-      border-bottom: 1px solid #ccc;
-    }
-    h2 {text-align: center;
-      margin: 10px 0;
-    }
-    
-    h6 { text-align: center;
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Sofia", sans-serif;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .loader {
+    font-weight: bold;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .chat-wrapper {
+    padding: 10px 15px;
+    background: #fafafa;
+    border-bottom: 1px solid #ccc;
+  }
+
+  h2 {
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  h6 {
+    text-align: center;
     margin-top: -23px;
     margin-bottom: 5px;
     position: fixed;
-    /* translate: 155%; */
     background: aqua;
-    width: 90vw;}
-    
-    .filters, .scroll-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .filters input, .filters select, .filters button, .scroll-buttons button {
-      padding: 8px;
-      font-size: 14px;
-    }
-    .chat-container {
-      padding: 15px;
-      max-height: 97vh;
-      overflow-y: auto;
-      scroll-behavior: smooth;
-    }
-    .message {
-      padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      background-color: #f0f0f0;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-    small {
-      font-size: 0.5em;
-      color: white;
-      display: block;
-      margin-top: 5px;
-    }
-    .topic-list {
-      padding: 15px;
-    }
-    .topic-item {
-      margin: 5px 0;
-      padding: 10px;
-      background: #eef;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    .toggle-chat {
-      margin: 10px;
-      display: none;
-text-align:center;
-	    position: sticky;
-    }
-    #goUp, #goDown {
-      position: fixed;
-      right: 32px;
-      padding: 8px 12px;
-      z-index: 100;
-      display: none;
-      background: yellow;
-      border: none;
-      border-radius: 50px;
-    }
-    #goUp {
-      top: 150px;
-    }
-    #goDown {
-      bottom: 50px;
-    }
-    .sender {
-      color: red; font-weight:bold;
-    }
-    blue {color:blue; font-weight:bold; }
-    
-      @media print {
+    width: 90vw;
+  }
+
+  .filters, .scroll-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .filters input, .filters select, .filters button, .scroll-buttons button {
+    padding: 8px;
+    font-size: 14px;
+  }
+
   .chat-container {
-    max-height: none !important;
-    overflow: visible !important;
+    padding: 15px;
+    max-height: 97vh;
+    overflow-y: auto;
+    scroll-behavior: smooth;
   }
-   #goUp, #goDown, .toggle-chat, .topic-list, .loader {
-    display: none !important;
+
+  .message {
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background-color: #f0f0f0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
   }
-  .print-header {
+
+  small {
+    font-size: 0.5em;
+    
     display: block;
-    position: running(header);
+    margin-top: 5px;
   }
+
+  .topic-list {
+    padding: 15px;
+  }
+
+  .topic-item {
+    margin: 5px 0;
+    padding: 10px;
+    background: #eef;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+
+  .toggle-chat {
+    margin: 10px;
+    display: none;
+    text-align: center;
+    position: sticky;
+  }
+
+  #goUp, #goDown {
+    position: fixed;
+    right: 32px;
+    padding: 8px 12px;
+    z-index: 100;
+    display: none;
+    background: yellow;
+    border: none;
+    border-radius: 50px;
+  }
+
+  #goUp {
+    top: 150px;
+  }
+
+  #goDown {
+    bottom: 50px;
+  }
+
+  .sender {
+    color: red;
+    font-weight: bold;
+  }
+
+  blue {
+    color: blue;
+    font-weight: bold;
+  }
+
   .tab-bar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin: 10px 0;
-  text-align: center;
-}
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    text-align: center;
+  }
 
-.tab-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  background: #ddd;
-  border: none;
-  border-radius: 5px;
-}
-.tab-button.active {
-  background: #4CAF50;
-  color: white;
-}
+  .tab-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background: #ddd;
+    border: none;
+    border-radius: 5px;
+  }
 
-  </style>
+  .tab-button.active {
+    background: #4CAF50;
+    color: white;
+  }
+
+  /* Print styles */
+  @media print {
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #fixedHeader {
+      position: relative !important;
+      top: 0;
+      background: white !important;
+      padding: 10px;
+    }
+
+    #chatWrapper,
+    #chatOutput {
+      padding-top: 180px !important;
+    }
+
+    .chat-container {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    #goUp,
+    #goDown,
+    .toggle-chat,
+    .topic-list,
+    .loader,
+    .tab-bar,
+    #navButtons {
+      display: none !important;
+    }
+
+    .message {
+      page-break-inside: avoid;
+    }
+
+    h2 {
+      page-break-before: always;
+    }
+  }
+</style>
+
 </head>
 <body>
   <!-- Fixed Header: Heading + Tabs + Back/Print -->
   <div id="fixedHeader" style="position:fixed; top:0; width:100%; background:yellow; z-index:999; padding:10px; border-bottom:1px solid #ccc;">
-    <h2 id="headingArea" class="font-effect-outline" style="margin: 5px 0;">పద్యసౌందర్యం</h2>
+    <h2 id="headingArea"  style="margin: 5px 0;">పద్యసౌందర్యం</h2>
 
     <div id="tabsArea" class="tab-bar" style="text-align:center;justify-content:center; margin-top:5px;   gap: 10px;
 ">
@@ -259,7 +312,7 @@ text-align:center;
     }
 
     function showMessages(topic) {
-      headingArea.innerHTML = `పద్యసౌందర్యం <br><small>${topic}</small>`;
+      headingArea.innerHTML = `పద్యసౌందర్యం <small>${topic}</small>`;
       chatWrapper.style.display = 'none';
       chatOutput.style.display = 'block';
       navButtons.style.display = 'block';
@@ -278,7 +331,7 @@ text-align:center;
     }
 
     function showSenderMessages(sender) {
-      headingArea.innerHTML = `పద్యసౌందర్యం <br><small>Messages by ${sender}</small>`;
+      headingArea.innerHTML = `పద్యసౌందర్యం <small>Messages by ${sender}</small>`;
       chatWrapper.style.display = 'none';
       chatOutput.style.display = 'block';
       navButtons.style.display = 'block';
