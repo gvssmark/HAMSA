@@ -198,21 +198,16 @@
     }
   }
   
- .marked {
-  background: yellow;
-  padding: 2px;
-  border-radius: 3px;
-}
-.marked.active {
-  background: orange;
-}
- @media screen and (max-width: 600px) {
-  #searchBar input {
-    width: 70vw;
-  }
-}
-
   
+  
+
+  .highlight {
+    background: lightgreen;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+
+
 </style>
 
 </head>
@@ -227,12 +222,21 @@
       <button class="tab-button" onclick="switchTab('senders')">Senders</button>
     </div>
 
-    <div id="navButtons" style="text-align:center; margin-top:8px; display:none;">
-  <button onclick="toggleTopicView()">Back to Topics</button>
-  <button id="searchToggleBtn" onclick="document.getElementById('searchBar').style.display='block'">Search</button>
 
-  <button style="background:black; color:white; border:none" onclick="printTopic()">Print</button>
-</div>
+
+
+
+    <div id="navButtons" style="text-align:center; margin-top:8px; display:none;">
+      <button onclick="toggleTopicView()">Back to Topics</button>
+        <button id="searchToggleBtn" onclick="document.getElementById('searchBar').style.display='block'">Search</button>
+
+      <button style="background:black; color:white; border:none" onclick="printTopic()">Print</button>
+    </div>
+  </div>
+
+  <!-- Loader (Div 2) -->
+  <div class="loader" id="loader" style="margin-top:100px;">Loading chat data...</div>
+
 
 <div id="searchBar" style="display:none; position:fixed; top:10px; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; padding:8px 10px; border-radius:8px; z-index:9999; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width:95vw; width:100%; box-sizing:border-box; font-family:sans-serif;">
   <input 
@@ -250,11 +254,6 @@
 </div>
 
 
-  </div>
-
-  <!-- Loader (Div 2) -->
-  <div class="loader" id="loader" style="margin-top:100px;">Loading chat data...</div>
-
   <!-- Topic and Sender Lists (Div 1 content continued) -->
   <div id="chatWrapper" style="padding: 140px 15px 10px;"> <!-- Padded for fixed header -->
     <div class="topic-list" id="topicList"></div>
@@ -267,142 +266,6 @@
   <!-- Scroll Buttons -->
   <button id="goUp" onclick="scrollToTop()">🔼</button>
   <button id="goDown" onclick="scrollToBottom()">🔽</button>
-  
-  
-  <script>
-  
-  
-
-  let matches = [];
-  let currentIndex = 0;
-  
-  let highlightElements = [];
-let currentHighlight = 0;
-
-
-  function toggleSearchBar() {
-  document.getElementById('searchInput').value="";
-    const searchBar = document.getElementById('searchBar');
-    searchBar.style.display = searchBar.style.display === 'none' ? 'block' : 'none';
-    if (searchBar.style.display === 'block') {
-      document.getElementById('searchInput').focus();
-    } else {
-      clearHighlights();
-    }
-  }
-
-  function closeSearchBar() {
-  const searchBar = document.getElementById("searchBar");
-  searchBar.style.display = 'none';
-
-  // Fully unwrap all <span class="highlighted"> elements
-  const highlights = document.querySelectorAll('.highlighted');
-  highlights.forEach(span => {
-    const textNode = document.createTextNode(span.textContent);
-    span.replaceWith(textNode);
-  });
-
-  // Reset search state
-  document.getElementById('searchInput').value = "";
-  document.getElementById('matchCounter').innerText = "";
-  highlightElements = [];
-  currentHighlight = 0;
-}
-
-
-function highlightSearch(term) {
-  clearHighlights(); // Call before starting a new search
-
-  if (!term) return;
-
-  const messages = document.querySelectorAll('#chatOutput .message');
-  highlightElements = [];
-
-  messages.forEach(msg => {
-    const regex = new RegExp(`(${term})`, 'gi');
-    msg.innerHTML = msg.innerHTML.replace(regex, '<span class="highlighted">$1</span>');
-  });
-
-  highlightElements = Array.from(document.querySelectorAll('.highlighted'));
-  currentHighlight = 0;
-  updateHighlightUI();
-}
-
-
-
-document.addEventListener('click', function(event) {
-  const searchBar = document.getElementById('searchBar');
-  const searchButton = document.getElementById('searchToggleBtn');
-  
-  if (
-    searchBar.style.display === 'block' &&
-    !searchBar.contains(event.target) &&
-    (!searchButton || !searchButton.contains(event.target))
-  ) {
-    closeSearchBar();
-  }
-});
-
-
-
-  function clearHighlights() {
-    matches = [];
-    currentIndex = 0;
-    document.querySelectorAll('.marked').forEach(el => {
-      el.outerHTML = el.innerText;
-    });
-    document.getElementById('matchCounter').textContent = '';
-  }
-
-  function searchText() {
-
-clearHighlights();
-    const term = document.getElementById('searchInput').value.trim();
-    if (!term) return;
-
-    const regex = new RegExp(term, 'gi');
-    chatOutput.querySelectorAll('.message').forEach(msg => {
-      msg.innerHTML = msg.innerHTML.replace(regex, match => `<span class="marked">${match}</span>`);
-    });
-
-    matches = Array.from(document.querySelectorAll('.marked'));
-    if (matches.length) {
-      currentIndex = 0;
-      matches[currentIndex].classList.add('active');
-      matches[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    document.getElementById('matchCounter').textContent = `${matches.length ? currentIndex + 1 : 0} / ${matches.length}`;
-  }
-
-  function highlightNext() {
-    if (!matches.length) return;
-    matches[currentIndex].classList.remove('active');
-    currentIndex = (currentIndex + 1) % matches.length;
-    matches[currentIndex].classList.add('active');
-    matches[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    document.getElementById('matchCounter').textContent = `${currentIndex + 1} / ${matches.length}`;
-  }
-
-  function highlightPrev() {
-    if (!matches.length) return;
-    matches[currentIndex].classList.remove('active');
-    currentIndex = (currentIndex - 1 + matches.length) % matches.length;
-    matches[currentIndex].classList.add('active');
-    matches[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    document.getElementById('matchCounter').textContent = `${currentIndex + 1} / ${matches.length}`;
-  }
-
-
-function clearOnClick(input) {
-  if (!input.dataset.clicked) {
-    input.value = "";
-    input.dataset.clicked = "true";
-  }
-}
-
-</script>
-
 
   <script>
     const chatWrapper = document.getElementById('chatWrapper');
@@ -567,6 +430,135 @@ function clearOnClick(input) {
         topicBtn.classList.remove('active');
       }
     }
+//---------------------------------    
+    let currentIndex = -1;
+let matches = [];
+
+
+function clearOnClick(input) {
+  input.value = '';
+  resetHighlights();
+}
+
+
+function resetHighlights() {
+  const messages = document.querySelectorAll('.chat-container .message');
+  messages.forEach(msg => {
+    removeHighlights(msg);
+  });
+  matches = [];
+  currentIndex = -1;
+  document.getElementById('matchCounter').textContent = '';
+}
+
+function removeHighlights(element) {
+  const highlights = element.querySelectorAll('mark.highlight');
+  highlights.forEach(mark => {
+    const textNode = document.createTextNode(mark.textContent);
+    mark.replaceWith(textNode);
+  });
+}
+
+
+
+function searchText() {
+  resetHighlights();
+  const searchTerm = document.getElementById('searchInput').value.trim();
+  if (!searchTerm) return;
+
+  const messages = document.querySelectorAll('.chat-container .message');
+  const regex = new RegExp(escapeRegExp(searchTerm), 'gi');
+
+  matches = [];
+
+  messages.forEach(msg => {
+    highlightInElement(msg, regex);
+  });
+
+  if (matches.length > 0) {
+    currentIndex = 0;
+    scrollToMatch(currentIndex);
+    updateCounter();
+  }
+}
+
+
+
+function scrollToMatch(index) {
+  matches.forEach((m, i) => m.style.background = i === index ? 'yellow' : 'lightgreen');
+  matches[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+
+function highlightNext() {
+  if (matches.length === 0) return;
+  currentIndex = (currentIndex + 1) % matches.length;
+  scrollToMatch(currentIndex);
+  updateCounter();
+}
+
+function highlightPrev() {
+  if (matches.length === 0) return;
+  currentIndex = (currentIndex - 1 + matches.length) % matches.length;
+  scrollToMatch(currentIndex);
+  updateCounter();
+}
+
+
+function updateCounter() {
+  document.getElementById('matchCounter').textContent = `${currentIndex + 1} / ${matches.length}`;
+}
+
+
+function closeSearchBar() {
+  document.getElementById('searchBar').style.display = 'none';
+  resetHighlights();
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+
+function highlightInElement(element, regex) {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+  const textNodes = [];
+
+  while (walker.nextNode()) {
+    textNodes.push(walker.currentNode);
+  }
+
+  textNodes.forEach(node => {
+    const parent = node.parentNode;
+    const frag = document.createDocumentFragment();
+    let lastIndex = 0;
+    const text = node.textContent;
+    regex.lastIndex = 0;
+
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const before = text.slice(lastIndex, match.index);
+      if (before) frag.appendChild(document.createTextNode(before));
+
+      const mark = document.createElement('mark');
+      mark.className = 'highlight';
+      mark.textContent = match[0];
+      frag.appendChild(mark);
+      matches.push(mark);
+
+      lastIndex = regex.lastIndex;
+    }
+
+    const after = text.slice(lastIndex);
+    if (after) frag.appendChild(document.createTextNode(after));
+
+    if (frag.childNodes.length) {
+      parent.replaceChild(frag, node);
+    }
+  });
+}
+
+
   </script>
 </body>
 
