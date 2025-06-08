@@ -206,6 +206,16 @@
     padding: 0 2px;
     border-radius: 2px;
   }
+#searchBar {display: block; position: fixed;top: 80px; left: 50%;transform: translateX(-50%);;border: 1px solid rgb(204, 204, 204);padding: 8px 10px;border-radius: 8px;z-index: 9999;box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 10px;max-width: 95vw;width: 100%;box-sizing: border-box;font-family: sans-serif;;}
+
+@media only screen and (min-width: 600px) {
+  body {
+    background-color: lightblue;
+  }
+  #searchBar {background-color: lightblue;
+  top:7px; width:40%; left:0; transform: translateX(0%)
+  }
+}
 
 
 </style>
@@ -238,7 +248,7 @@
   <div class="loader" id="loader" style="margin-top:100px;">Loading chat data...</div>
 
 
-<div id="searchBar" style="display: none; position: fixed;top: 80px; left: 50%;transform: translateX(-50%);background: black;border: 1px solid rgb(204, 204, 204);padding: 8px 10px;border-radius: 8px;z-index: 9999;box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 10px;max-width: 95vw;width: 100%;box-sizing: border-box;font-family: sans-serif;;">
+<div id="searchBar" >
   <input type="text" id="searchInput" placeholder="Search..." onclick="clearOnClick(this)" style="font-size:16px;padding:8px;width: 40%;max-width:190px;border:1px solid #ccc;border-radius:4px;" autocomplete="off">
   <span  onclick="searchText()" style="padding: 0px 5px ;">🔍</span >
   <span id="matchCounter" style="margin:0 ; color:white; font-size:x-small"></span>
