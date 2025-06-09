@@ -393,6 +393,9 @@
       navButtons.style.display = 'none';
       tabsArea.style.display = 'flex';
       chatOutput.innerHTML = '';
+      goUpeBtn.style.display= 'none';
+      goDowneBtn.style.display= 'none';
+      
     }
 
     function scrollToTop() {
@@ -405,7 +408,7 @@
 
     chatOutput.addEventListener('scroll', () => {
       const threshold = 50;
-      goUpBtn.style.display = chatOutput.scrollTop > threshold ? 'block' : 'none';
+      goUpeBtn.style.display = chatOutput.scrollTop > threshold ? 'block' : 'none';
       goDownBtn.style.display = (chatOutput.scrollTop + chatOutput.clientHeight < chatOutput.scrollHeight - threshold) ? 'block' : 'none';
     });
 
