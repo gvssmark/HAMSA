@@ -412,7 +412,7 @@
 
     chatOutput.addEventListener('scroll', () => {
       const threshold = 50;
-      goUpeBtn.style.display = chatOutput.scrollTop > threshold ? 'block' : 'none';
+      goUpBtn.style.display = chatOutput.scrollTop > threshold ? 'block' : 'none';
       goDownBtn.style.display = (chatOutput.scrollTop + chatOutput.clientHeight < chatOutput.scrollHeight - threshold) ? 'block' : 'none';
     });
 
