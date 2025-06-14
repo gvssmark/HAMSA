@@ -1,8 +1,4 @@
 
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -428,23 +424,12 @@ if (typeof serial !== 'undefined') {
 
       const filtered = allMessages.filter(m => m.sender === sender);
 
-      filtered.forEach(({ sender, message, date, time, subtopic, chainExtract, serial, chainTo }) => {
-      
-      
-  const div = document.createElement('div');
-div.className = 'message';
-if (typeof serial !== 'undefined') {
-  div.id = `msg-${serial}`;
-}
-
-  const chained = chainExtract && chainTo
-  ? `<div class="chained"><em><a href="#msg-${chainTo}" onclick="scrollToMessage('${chainTo}'); return false;">↪ ${chainExtract}</a></em></div>`
-  : '';
-
-  div.innerHTML = `<div class="sender">${sender}</div>${chained}${message}<small>${date} ${time} in ${subtopic}</small>`;
-  chatOutput.appendChild(div);
-});
-
+      filtered.forEach(({ sender, message, date, time, subtopic }) => {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.innerHTML = `<div class="sender">${sender}</div>${message}<small>${date} ${time} in ${subtopic}</small>`;
+        chatOutput.appendChild(div);
+      });
 
       chatOutput.scrollTop = 0;
       
