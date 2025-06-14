@@ -228,6 +228,18 @@
   color: #444;
 }
 
+.highlightChained {
+  background-color: #fff3b0 !important;
+  transition: background-color 0.5s ease;
+}
+
+.chained a {
+  text-decoration: none;
+}
+
+.chained a:hover {
+  text-decoration: underline; /* optional */
+}
 
 </style>
 
@@ -388,10 +400,17 @@ if (ref) {
 
       let filtered = (topic === "0. అన్ని సందేశాలు") ? allMessages : allMessages.filter(m => m.topics.includes(topic));
 
-      filtered.forEach(({ sender, message, date, time, subtopic, chainExtract }) => {
+      filtered.forEach(({ sender, message, date, time, subtopic, chainExtract, serial, chainTo }) => {
   const div = document.createElement('div');
-  div.className = 'message';
-  const chained = chainExtract ? `<div class="chained"><em>↪ ${chainExtract}</em></div>` : '';
+div.className = 'message';
+if (typeof serial !== 'undefined') {
+  div.id = `msg-${serial}`;
+}
+
+  const chained = chainExtract && chainTo
+  ? `<div class="chained"><em><a href="#msg-${chainTo}" onclick="scrollToMessage('${chainTo}'); return false;">↪ ${chainExtract}</a></em></div>`
+  : '';
+
   div.innerHTML = `<div class="sender">${sender}</div>${chained}${message}<small>${date} ${time}${topic === "0. అన్ని సందేశాలు" ? ` in ${subtopic}` : ''}</small>`;
   chatOutput.appendChild(div);
 });
@@ -409,10 +428,19 @@ if (ref) {
 
       const filtered = allMessages.filter(m => m.sender === sender);
 
-      filtered.forEach(({ sender, message, date, time, subtopic, chainExtract }) => {
+      filtered.forEach(({ sender, message, date, time, subtopic, chainExtract, serial, chainTo }) => {
+      
+      
   const div = document.createElement('div');
-  div.className = 'message';
-  const chained = chainExtract ? `<div class="chained"><em>↪ ${chainExtract}</em></div>` : '';
+div.className = 'message';
+if (typeof serial !== 'undefined') {
+  div.id = `msg-${serial}`;
+}
+
+  const chained = chainExtract && chainTo
+  ? `<div class="chained"><em><a href="#msg-${chainTo}" onclick="scrollToMessage('${chainTo}'); return false;">↪ ${chainExtract}</a></em></div>`
+  : '';
+
   div.innerHTML = `<div class="sender">${sender}</div>${chained}${message}<small>${date} ${time} in ${subtopic}</small>`;
   chatOutput.appendChild(div);
 });
@@ -440,6 +468,19 @@ if (ref) {
     function scrollToTop() {
       chatOutput.scrollTop = 0;
     }
+
+function scrollToMessage(serial) {
+  const el = document.getElementById(`msg-${serial}`);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.classList.add('highlightChained');
+    setTimeout(() => el.classList.remove('highlightChained'), 2000);
+  } else {
+    alert("Referenced message is not visible in this view.");
+  }
+}
+
+
 
     function scrollToBottom() {
       chatOutput.scrollTop = chatOutput.scrollHeight;
