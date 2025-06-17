@@ -399,6 +399,7 @@ if (ref) {
       filtered.forEach(({ sender, message, date, time, subtopic, chainExtract, serial, chainTo }) => {
   const div = document.createElement('div');
         const stopic = subtopic.split(",").filter (a=> a != topic)
+        const stlisting = stopic.length>0 ? `also in ${stopic}`: "" 
 div.className = 'message';
 if (typeof serial !== 'undefined') {
   div.id = `msg-${serial}`;
@@ -408,7 +409,7 @@ if (typeof serial !== 'undefined') {
   ? `<div class="chained"><em><a href="#msg-${chainTo}" onclick="scrollToMessage('${chainTo}'); return false;">↪ ${chainExtract}</a></em></div>`
   : '';
 
-  div.innerHTML = `<div class="sender">${sender}</div>${chained}${message}<small>${date} ${time}${topic === "0. అన్ని సందేశాలు" ? ` in ${subtopic}` : ''} ${stopic.length > 0 ? `also in ${stopic}` : ""}</small>`;
+  div.innerHTML = `<div class="sender">${sender}</div>${chained}${message}<small>${date} ${time}${topic === "0. అన్ని సందేశాలు" ? ` in ${subtopic}` :  ` ${stlisting}` } </small>`;
   chatOutput.appendChild(div);
 });
 
