@@ -398,7 +398,7 @@ if (ref) {
 
       filtered.forEach(({ sender, message, date, time, subtopic, chainExtract, serial, chainTo }) => {
   const div = document.createElement('div');
-        const stopic = subtopic.split(",").filter (a=> a != topic)
+        const stopic = subtopic.split(",").filter (a=> a.trim() != topic)
         const stlisting = stopic.length>0 ? `also in ${stopic}`: "" 
 div.className = 'message';
 if (typeof serial !== 'undefined') {
