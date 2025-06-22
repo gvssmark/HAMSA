@@ -121,7 +121,7 @@
     window.onload = async function () {
       loader.style.display = 'block';
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbx-MseB6DA6QdjQdDKQZ_iV0El7Rr81vv-Lb6Py_JD9lxbo-yWTZwaQiMaMBnN45p0/exec');
+        const response = await fetch('https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec');
         const data = await response.json();
         allMessages = parseRawMessages(data);
         populateSenderDropdown(allMessages);
