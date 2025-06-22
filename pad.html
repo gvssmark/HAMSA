@@ -286,7 +286,7 @@
     window.onload = async function () {
       loader.style.display = 'block';
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbzO0VoBQ9biG0JX1agil02llkEBElKkVIhoZTkux5dJvlAQ5EIK--K_dguOWgrMsdzVjQ/exec');
+        const response = await fetch('https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec');
         const data = await response.json();
         allMessages = parseRawMessages(data);
         showTopics();
