@@ -319,7 +319,8 @@ allMessages = parseRawMessages(all0);
          data = await response.json();
         
         filterupto = data[0][9]
-        alert(filterupto)
+        console.log(filterupto)
+        console.log(allMessages.length)
         data = data.filter (a=> a[4]>filterupto)
         
         data = parseRawMessages(data);
