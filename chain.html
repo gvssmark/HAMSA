@@ -318,7 +318,10 @@ allMessages = parseRawMessages(all0);
         const response = await fetch('https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec');
          data = await response.json();
         
-        data = data.filter (a=> a[4]>5950)
+        filterupto = data[0][9]
+        alert(filterupto)
+        data = data.filter (a=> a[4]>filterupto)
+        
         data = parseRawMessages(data);
         allMessages = [...allMessages, ...data] 
         //allMessages = parseRawMessages(data);
