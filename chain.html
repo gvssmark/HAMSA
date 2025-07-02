@@ -251,7 +251,7 @@
     <div id="tabsArea" class="tab-bar" style="text-align:center;justify-content:center; margin-top:5px;   gap: 10px;
 ">
       <button class="tab-button active" onclick="switchTab('topics')">Topics</button>
-      <button class="tab-button" onclick="switchTab('senders')">Senders</button>
+      <button class="tab-button fullyloaded" onclick="switchTab('senders')">Senders</button>
     </div>
 
 
@@ -262,7 +262,7 @@
       <button onclick="toggleTopicView()">Back to Topics</button>
         <button id="searchToggleBtn" onclick="document.getElementById('searchBar').style.display='block'">Search</button>
 
-      <button id='printbtn' style="background:black; color:white; border:none" onclick="printTopic()">Print</button>
+      <button class='fullyloaded' style="background:black; color:white; border:none" onclick="printTopic()">Print</button>
     </div>
   </div>
 
@@ -305,7 +305,7 @@
     const headingArea = document.getElementById('headingArea');
     const tabsArea = document.getElementById('tabsArea');
     const navButtons = document.getElementById('navButtons');
-    const printbtn = document.getElementById('printbtn');
+    const printbtn = document.getElementsByClassName('fullyloaded');
     
 
     let allMessages = [];
@@ -324,7 +324,8 @@ allMessages = parseRawMessages(all0);
         //allMessages = parseRawMessages(data);
         showTopics();
         showSenders();
-        printbtn.style.background='red'
+        printbtn[0].style.color='blue'
+        printbtn[1].style.color='yellow'
 
         
         //tabsArea.style.display = 'flex'; // show tab buttons
