@@ -334,8 +334,7 @@ allMessages = parseRawMessages(all0);
         
         filterupto = data[0][9]
         msgdif = allMessages.length - filterupto
-        alertmessage = msgdif !== - 1 ?  "All Messages not loaded- Try after 10 minutes" : "All Messages loaded"
-        alert(alertmessage)
+        msgdif === - 1 ?  modal.style.display='none': modal.style.display='block'
         data = data.filter (a=> a[4]>filterupto)
         
         data = parseRawMessages(data);
