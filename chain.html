@@ -239,6 +239,11 @@
 .chained a:hover {
   /*text-decoration: underline;  */
 }
+    .modal{  display: none;  position: fixed;  z-index: 1;  padding-top: 100px;  left: 0;  top: 0;  width: 100%;  height: 100%;  overflow: auto;  background-color: rgb(0,0,0);  background-color: rgba(0,0,0,0.4);}
+.modal-content {  background-color: #fefefe;  margin: auto;  padding: 20px;  border: 1px solid #888;  width: 80%;}
+.close {  color: #aaaaaa;  float: right;  font-size: 28px;  font-weight: bold;}
+.close:hover,.close:focus {  color: #000;  text-decoration: none;  cursor: pointer;}
+
 
 </style>
 
@@ -292,7 +297,12 @@
   <!-- Scroll Buttons -->
   <button id="goUp" onclick="scrollToTop()">🔼</button>
   <button id="goDown" onclick="scrollToBottom()">🔽</button>
-
+<div id="myModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p id='alert'>All Messages not loaded<br>Try after 10 Minutes</p>
+  </div>
+</div>
   <script>
     const chatWrapper = document.getElementById('chatWrapper');
     const loader = document.getElementById('loader');
@@ -306,6 +316,10 @@
     const tabsArea = document.getElementById('tabsArea');
     const navButtons = document.getElementById('navButtons');
     const printbtn = document.getElementsByClassName('fullyloaded');
+var modal = document.getElementById("myModal");
+var span = document.getElementsByClassName("close")[0];
+span.onclick = function() {modal.style.display = "none";}
+window.onclick = function(event) {if (event.target == modal) {modal.style.display = "none";}}
     
 
     let allMessages = [];
