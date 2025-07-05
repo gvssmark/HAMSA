@@ -259,23 +259,13 @@
   display:none;
     }
 
-     #timer{
-    float: right;
-    z-index: 3;
-    position: sticky;
-    top: 90px;
-    left:0;
-    background: yellow;
-    text-align:center;
-  display:none;
-  font-size: small;
-    }
+  
 </style>
 
 </head>
 <body>
   <div id='counter' ></div>
-  <div id='timer' >time</div>
+ 
   <!-- Fixed Header: Heading + Tabs + Back/Print -->
   <div id="fixedHeader" style="position:fixed; top:0; width:100%; background:yellow; z-index:0; padding:10px; border-bottom:1px solid #ccc;">
     <h2 id="headingArea"  style="margin: 5px 0;">పద్యసౌందర్యం</h2>
@@ -373,9 +363,7 @@ allMessages = parseRawMessages(all0);
         counter.innerHTML=allMessages.length
         counter.style.display="block";
         //allMessages = parseRawMessages(data);
-        const timer = document.getElementById('timer');
-        timer.innerHTML=`Last Msg: ${allMessages[allMessages.length-1].time}`
-        timer.style.display="block";
+
         
         showTopics();
         showSenders();
