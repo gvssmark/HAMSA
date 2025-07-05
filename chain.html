@@ -256,6 +256,7 @@
     border-radius: 50px;
     text-align:center;
     line-height: 50px;font-size: small;
+  display:none;
     }
 </style>
 
@@ -356,6 +357,8 @@ allMessages = parseRawMessages(all0);
         
         data = parseRawMessages(data);
         allMessages = [...allMessages, ...data] 
+        counter.innerHTML=allMessages.length
+        counter.style.display="block";
         //allMessages = parseRawMessages(data);
         showTopics();
         showSenders();
