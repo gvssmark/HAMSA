@@ -244,7 +244,19 @@
 .close {  color: #aaaaaa;  float: right;  font-size: 28px;  font-weight: bold;}
 .close:hover,.close:focus {  color: #000;  text-decoration: none;  cursor: pointer;}
 
-
+#counter{
+    width: 50px;
+    height: 50px;
+    float: right;
+    z-index: 2;
+    position: sticky;
+    top: 0;
+    left:0;
+    background: aqua;
+    border-radius: 50px;
+    text-align:center;
+    line-height: 50px;font-size: small;
+    }
 </style>
 
 </head>
@@ -303,6 +315,7 @@
     <p id='alert'>All Messages not loaded<br>Try after 10 Minutes</p>
   </div>
 </div>
+  <div id='counter' ></div>
   <script>
     const chatWrapper = document.getElementById('chatWrapper');
     const loader = document.getElementById('loader');
@@ -320,8 +333,11 @@ var modal = document.getElementById("myModal");
 var span = document.getElementsByClassName("close")[0];
 span.onclick = function() {modal.style.display = "none";}
 window.onclick = function(event) {if (event.target == modal) {modal.style.display = "none";}}
+  const counter = document.getElementById('counter');  
+setTimeout(function(){
+  document.getElementById("counter").style.display = "none"; 
+ }, 10000);
     
-
     let allMessages = [];
 allMessages = parseRawMessages(all0);
         showTopics();
