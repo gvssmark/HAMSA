@@ -1,3 +1,6 @@
+The following script is supposed to find last line from json
+Use this last line to find in the input file and process the next lines?
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +25,9 @@
   <pre id="output"></pre>
 
   <script>
-  async function getLastLineFromScript() {
+  regex = /^\[(\d{2})\/(\d{2})\/(\d{4}), (\d{2}):(\d{2}):(\d{2})\] ~?\s?\u202f?(.*?):/s;
+
+    async function getLastLineFromScript() {
   const url = "https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec";
 
   try {
@@ -37,7 +42,9 @@
       Array.isArray(json[json.length - 1]) &&
       typeof json[json.length - 1][0] === "string"
     ) {
-      return json[json.length - 1][0]; // ✅ last row's first column
+      return json[json.length - 1][0].match(regex)[0];
+; // ✅ last row's first column
+      //alert(json[json.length - 1][0])
     }
 
     return "[05/07/2025, 23:39:54]";
@@ -56,42 +63,17 @@
       }
 
       const file = input.files[0];
-       text = await file.text();
-       //console.log(text)
-       lastLine = await getLastLineFromScript();
-      lastLine = lastLine.split("/n")
-      lastLine = lastLine[0] 
-//console.log(lastLine)
-       const lines = text.split(/\r?\n/);
+      const text = await file.text();
+      const lastLine = await getLastLineFromScript();
 
-// Match only message part (ignore timestamp)
-const matchPortion = lastLine.replace(/^\[\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}\] /, "").slice(0, 80);
-
-//console.log("Match portion:", matchPortion);
-
-const startIndex = lines.findIndex(line =>
-  line.includes(matchPortion)
-);
-
-//console.log("Found at index:", startIndex);
-
-if (startIndex === -1) {
-  alert("Message portion not found in file. Check console logs.");
-  return;
-}
+      const lines = text.split(/\r?\n/);
+      const startIndex = lines.findIndex(line => line.includes(lastLine.trim()));
 
 
-//console.log("Found at index:", startIndex);
-
-
-
-
-if (startIndex === -1) {
-  alert("Timestamp not found in the file. Please check console logs.");
-  return;
-}
-
-
+      if (startIndex === -1) {
+        alert("Last line from script not found. Please check the data.");
+        return;
+      }
 
       const processedLines = lines.slice(startIndex).map(line =>
         line
@@ -116,3 +98,4 @@ if (startIndex === -1) {
   </script>
 </body>
 </html>
+
