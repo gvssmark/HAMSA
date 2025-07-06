@@ -59,6 +59,8 @@
        text = await file.text();
        //console.log(text)
        lastLine = await getLastLineFromScript();
+      lastLine = lastLine.split("/n")
+      lastLine = lastLine[0] 
 //console.log(lastLine)
        const lines = text.split(/\r?\n/);
 
