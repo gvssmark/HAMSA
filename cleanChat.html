@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WhatsApp Chat Cleaner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+    h2 { color: #333; }
+    input[type="file"], button { margin: 10px 0; padding: 8px; }
+    pre { white-space: pre-wrap; background: #fff; padding: 10px; border: 1px solid #ccc; max-height: 300px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h2>WhatsApp Chat Cleaner</h2>
+  <input type="file" id="fileInput" accept=".txt" />
+  <br />
+  <button id="processBtn">Clean Chat</button>
+  <br />
+  <a id="downloadLink" style="display:none;" download="cleaned_chat.txt">Download Cleaned File</a>
+  <pre id="output"></pre>
+
+  <script>
+    async function getLastLineFromScript() {
+      const url = "https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec";
+
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+
+        // If json[0] contains the last line starting with a WhatsApp timestamp
+        if (Array.isArray(json) && /^\[\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}\]/.test(json[0])) {
+          return json[0];
+        }
+
+        return "[05/07/2025, 23:39:54]";
+      } catch (e) {
+        console.error("Error fetching last line:", e);
+        return "[05/07/2025, 23:39:54]";
+      }
+    }
+
+    async function processFile() {
+      const input = document.getElementById("fileInput");
+      if (!input.files.length) {
+        alert("Please select a WhatsApp .txt file");
+        return;
+      }
+
+      const file = input.files[0];
+      const text = await file.text();
+      const lastLine = await getLastLineFromScript();
+
+      const lines = text.split(/\r?\n/);
+      const startIndex = lines.findIndex(line => line.includes(lastLine.trim()));
+
+
+      if (startIndex === -1) {
+        alert("Last line from script not found. Please check the data.");
+        return;
+      }
+
+      const processedLines = lines.slice(startIndex).map(line =>
+        line
+          .replace(/["'*]/g, "")                         // remove ", ', *
+          .replace(/<This message was edited>/gi, "")   // remove system message
+          .trim()
+      ).filter(line => line); // remove empty lines
+
+      const finalText = processedLines.join("\n");
+      document.getElementById("output").textContent = finalText;
+
+      // Enable download
+      const blob = new Blob([finalText], { type: "text/plain" });
+      const link = document.getElementById("downloadLink");
+      link.href = URL.createObjectURL(blob);
+      link.style.display = "inline-block";
+      link.textContent = "Download Cleaned File";
+    }
+
+    // Attach the function to button
+    document.getElementById("processBtn").addEventListener("click", processFile);
+  </script>
+</body>
+</html>
