@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,24 +22,31 @@
   <pre id="output"></pre>
 
   <script>
-    async function getLastLineFromScript() {
-      const url = "https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec";
+  async function getLastLineFromScript() {
+  const url = "https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec";
 
-      try {
-        const res = await fetch(url);
-        const json = await res.json();
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
 
-        // If json[0] contains the last line starting with a WhatsApp timestamp
-        if (Array.isArray(json) && /^\[\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}\]/.test(json[0])) {
-          return json[0];
-        }
+    //console.log("Fetched JSON:", json); // Debug
 
-        return "[05/07/2025, 23:39:54]";
-      } catch (e) {
-        console.error("Error fetching last line:", e);
-        return "[05/07/2025, 23:39:54]";
-      }
+    if (
+      Array.isArray(json) &&
+      json.length > 0 &&
+      Array.isArray(json[json.length - 1]) &&
+      typeof json[json.length - 1][0] === "string"
+    ) {
+      return json[json.length - 1][0]; // ✅ last row's first column
     }
+
+    return "[05/07/2025, 23:39:54]";
+  } catch (e) {
+    console.error("Error fetching last line:", e);
+    return "[05/07/2025, 23:39:54]";
+  }
+}
+
 
     async function processFile() {
       const input = document.getElementById("fileInput");
@@ -48,17 +56,40 @@
       }
 
       const file = input.files[0];
-      const text = await file.text();
-      const lastLine = await getLastLineFromScript();
+       text = await file.text();
+       //console.log(text)
+       lastLine = await getLastLineFromScript();
+//console.log(lastLine)
+       const lines = text.split(/\r?\n/);
 
-      const lines = text.split(/\r?\n/);
-      const startIndex = lines.findIndex(line => line.includes(lastLine.trim()));
+// Match only message part (ignore timestamp)
+const matchPortion = lastLine.replace(/^\[\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}\] /, "").slice(0, 100);
+
+//console.log("Match portion:", matchPortion);
+
+const startIndex = lines.findIndex(line =>
+  line.includes(matchPortion)
+);
+
+//console.log("Found at index:", startIndex);
+
+if (startIndex === -1) {
+  alert("Message portion not found in file. Check console logs.");
+  return;
+}
 
 
-      if (startIndex === -1) {
-        alert("Last line from script not found. Please check the data.");
-        return;
-      }
+//console.log("Found at index:", startIndex);
+
+
+
+
+if (startIndex === -1) {
+  alert("Timestamp not found in the file. Please check console logs.");
+  return;
+}
+
+
 
       const processedLines = lines.slice(startIndex).map(line =>
         line
