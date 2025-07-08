@@ -60,7 +60,8 @@ Text: data.sort((a,b)=> a[1].localeCompare(b[1]))
 Numbers: jsdata.sort((a,b) =>  a.srno - b.srno)
 Text: jsdata.sort((a,b) =>  a.name.localeCompare(b.name))
 
-
+allMessages = allMessages.map(v => ({...v, isActive: ""})) // this will add a new key (isActive) to exisiting array
+  
 
 
 Report table generation: use proper html tags for table tr and td
