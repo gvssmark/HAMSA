@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +14,20 @@
     box-sizing: border-box;
   }
 
+	.timer {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 1000%;
+			background-color: rgba(255, 255, 255, 0.5);
+			z-index: 1;
+			font-size: 48px;
+			font-weight: bold;
+			text-align: center;
+			padding-top: 200px;
+		}
+        
   body {
     font-family: "Sofia", sans-serif;
     font-size: 16px;
@@ -264,6 +279,7 @@
 
 </head>
 <body>
+
   <div id='counter' ></div>
  
   <!-- Fixed Header: Heading + Tabs + Back/Print -->
@@ -287,7 +303,7 @@
       <button class='fullyloaded' style="background:black; color:white; border:none" onclick="printTopic()">Print</button>
     </div>
   </div>
-
+<div class="timer" id="timer">Loading...</div>
   <!-- Loader (Div 2) -->
   <div class="loader" id="loader" style="margin-top:100px;">Loading chat data...</div>
 
@@ -334,14 +350,14 @@
     const tabsArea = document.getElementById('tabsArea');
     const navButtons = document.getElementById('navButtons');
     const printbtn = document.getElementsByClassName('fullyloaded');
+    const timer = document.getElementById('timer')
+    
 var modal = document.getElementById("myModal");
 var span = document.getElementsByClassName("close")[0];
 span.onclick = function() {modal.style.display = "none";}
 window.onclick = function(event) {if (event.target == modal) {modal.style.display = "none";}}
-  const counter = document.getElementById('counter');  
-setTimeout(function(){
-  document.getElementById("counter").style.display = "none"; 
- }, 10000);
+ // const counter = document.getElementById('counter');  
+//setTimeout(function(){document.getElementById("counter").style.display = "none"; }, 10000);
     
     let allMessages = [];
 allMessages = parseRawMessages(all0);
@@ -362,8 +378,9 @@ allMessages = parseRawMessages(all0);
         data = parseRawMessages(data);
         allMessages = data
           
-        counter.innerHTML=allMessages.length
-        counter.style.display="block";
+        //counter.innerHTML=allMessages.length
+        //counter.style.display="block";
+        timer.style.display="none";
         //allMessages = parseRawMessages(data);
 
         
