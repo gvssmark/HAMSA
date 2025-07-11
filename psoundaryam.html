@@ -373,7 +373,7 @@ allMessages = parseRawMessages(all0);
         filterupto = data[0][9]
         msgdif = allMessages.length - filterupto
         msgdif === - 1 ?  modal.style.display='none': modal.style.display='block'
-        data = data.filter (a=> a[4]>filterupto)
+        data = data.filter (a=> a[4]>filterupto).shift()
         
         data = [...all0, ...data]
         data = parseRawMessages(data);
