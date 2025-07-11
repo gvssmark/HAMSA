@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WhatsApp Chat Viewer</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f2f2f2;
+      scroll-behavior: smooth;
+    }
+
+    .wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .controls {
+  position: sticky;
+  top: 0;
+  left: 0;
+  ///width: 100%;
+  box-sizing: border-box;
+  background: #333;
+  color: white;
+  padding: 10px 16px 10px 10px; /* padding-right to avoid scroll bar collision */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  z-index: 999;
+   max-width: 800px;
+    margin: 0 auto;
+}
+
+.bottom-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  
+  background: #333;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 0px;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.2);
+  z-index: 998;
+  box-sizing: border-box;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.bottom-bar button {
+  background: white;
+  color: #333;
+  border: none;
+  padding: 8px 16px;
+  font-size: 1em;
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.bottom-bar button:hover {
+  background: #eee;
+}
+
+    .controls select {
+      padding: 5px;
+      font-size: 1em;
+	 
+    }
+
+    
+
+    .chat-container {
+      padding: 10px;
+    }
+
+    .message {
+      background: white;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px #ccc;
+    }
+
+    .meta {
+      font-size: 0.85em;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .sender {
+      color: red;
+      font-weight: bold;
+    }
+
+    .quote {
+      background: #eee;
+      padding: 5px;
+      margin-bottom: 5px;
+      border-left: 3px solid #888;
+      font-style: italic;
+      font-size: 0.9em;
+    }
+
+    .topics {
+      margin-top: 5px;
+      font-size: 0.85em;
+      color: #333;
+      font-style: italic;
+    }
+
+    
+
+    .floating-btn:hover {
+      opacity: 1;
+    }
+
+    #goTopBtn { bottom: 70px; }
+#goBottomBtn { bottom: 20px; }
+.chat-container {
+  padding: 10px;
+  margin-bottom: 80px; /* enough space above bottom bar */
+}
+
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <label for="topicFilter">Topic:</label>
+    <select id="topicFilter"><option value="All">All</option></select>
+
+    <label for="senderFilter">Sender:</label>
+    <select id="senderFilter"><option value="All">All</option></select>
+  </div>
+
+  <div class="spacer"></div>
+  <div class="wrapper">
+    <div class="chat-container" id="chatOutput"></div>
+  </div>
+
+  <div class="bottom-bar">
+  <button onclick="scrollToTop()">↑ Top</button>
+  <button onclick="scrollToBottom()">↓ Bottom</button>
+</div>
+
+  <script src="https://gvssmark.github.io/HAMSA/echo.json"></script>
+  <script>
+    //const chatData = window.chatData;
+	chatData.shift()
+    const chatOutput = document.getElementById('chatOutput');
+    const topicFilter = document.getElementById('topicFilter');
+    const senderFilter = document.getElementById('senderFilter');
+
+    const topicSet = new Set();
+    const senderSet = new Set();
+    const serialMap = {};
+
+    chatData.forEach(entry => {
+      serialMap[entry[5]] = entry;
+      if (entry[4]) entry[4].split(',').forEach(t => topicSet.add(t.trim()));
+      if (entry[2]) senderSet.add(entry[2].trim());
+    });
+
+    [...topicSet].sort((a, b) => {
+        const aNum = parseInt(a.match(/\d+/)?.[0]) || 0;
+        const bNum = parseInt(b.match(/\d+/)?.[0]) || 0;
+        return aNum - bNum;
+      }).forEach(topic => {
+      const opt = document.createElement('option');
+      opt.value = topic;
+      opt.textContent = topic;
+      topicFilter.appendChild(opt);
+    });
+
+    [...senderSet].sort((a, b) => {
+        const aNum = parseInt(a.match(/\d+/)?.[0]) || 0;
+        const bNum = parseInt(b.match(/\d+/)?.[0]) || 0;
+        return aNum - bNum;
+      }).forEach(sender => {
+      const opt = document.createElement('option');
+      opt.value = sender;
+      opt.textContent = sender;
+      senderFilter.appendChild(opt);
+    });
+
+    function displayMessages() {
+      const selectedTopic = topicFilter.value;
+      const selectedSender = senderFilter.value;
+
+      const filtered = chatData.filter(entry => {
+        const matchesTopic = selectedTopic === 'All' || (entry[4] && entry[4].split(',').map(t => t.trim()).includes(selectedTopic));
+        const matchesSender = selectedSender === 'All' || (entry[2] && entry[2].trim() === selectedSender);
+        return matchesTopic && matchesSender;
+      });
+
+      chatOutput.innerHTML = '';
+      filtered.forEach(entry => {
+        const [date, time, sender, msg, topics, serial, refSerial, refSender, refMsg] = entry;
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.id = `msg-${serial}`;
+
+        let quoteHTML = '';
+        if (refSerial && serialMap[refSerial]) {
+          const ref = serialMap[refSerial];
+          quoteHTML = `<div class="quote">
+            ↪ <a href="#msg-${ref[5]}" onclick="scrollToMessage('${ref[5]}')">${ref[2]}: ${ref[3].slice(0, 100)}${ref[3].length > 100 ? '...' : ''}</a>
+          </div>`;
+        } else if (refMsg && refSender) {
+          const trimmedMsg = refMsg.length > 100 ? refMsg.slice(0, 100) + '...' : refMsg;
+          quoteHTML = `<div class="quote">
+            ↪ <a href="#msg-${refSerial}" onclick="scrollToMessage('${refSerial}')">${refSender}: ${trimmedMsg}</a>
+          </div>`;
+        }
+
+        // Show topics if more than one
+        let alsoTopics = '';
+        if (topics && topics.split(',').length > 1) {
+          alsoTopics = `<div class="topics">Also in: ${topics.split(',').map(t => t.trim()).join(', ')}</div>`;
+        }
+
+        div.innerHTML = `
+          <div class="meta">${date} ${time} • <span class="sender">${sender}</span></div>
+          ${quoteHTML}
+          <div class="text">${msg.replace(/\n/g, '<br>')}</div>
+          ${alsoTopics}
+        `;
+        chatOutput.appendChild(div);
+      });
+    }
+
+    function scrollToMessage(id) {
+      const el = document.getElementById('msg-' + id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.style.backgroundColor = '#ffffcc';
+        setTimeout(() => el.style.backgroundColor = '', 2000);
+      }
+    }
+
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function scrollToBottom() {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    topicFilter.addEventListener('change', () => {
+      senderFilter.value = "All";
+      displayMessages();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    senderFilter.addEventListener('change', () => {
+      topicFilter.value = "All";
+      displayMessages();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    //displayMessages();
+  </script>
+</body>
+</html>
