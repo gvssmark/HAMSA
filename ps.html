@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -140,10 +139,63 @@
 
 .also {color:blue; font-size:small; text-align:right;}
 
-.highlight {
-  background-color: yellow;
-  font-weight: bold;
+#floatingSearchBar {
+  position: fixed;
+  top: 100px;
+  right: 10px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  padding: 5px 10px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 90%;
+  display:none;
 }
+
+#floatingSearchBar input {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 1em;
+  width: 180px;
+}
+
+#floatingSearchBar button {
+  background: #f0f0f0;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 1em;
+  border-radius: 4px;
+}
+
+#floatingSearchBar button:hover {
+  background: #ddd;
+}
+
+#toggleSearchBtn {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  padding: 6px 10px;
+  font-size: 1.2em;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 10000;
+  cursor: pointer;
+}
+
+#floatingSearchBar.hidden {
+  display: none;
+}
+
+
+
 
   </style>
 </head>
@@ -160,14 +212,18 @@
   <div class="wrapper">
     <div class="chat-container" id="chatOutput"></div>
   </div>
+  <button id="toggleSearchBtn" onclick="toggleSearchBar()">🔍</button>
+
+  <div id="floatingSearchBar">
+  <input type="text" id="searchInput" placeholder="Search…" />
+  <button onclick="jumpToMatch(-1)">🔼</button>
+  <button onclick="jumpToMatch(1)">🔽</button>
+</div>
 
   <div class="bottom-bar">
   <button onclick="scrollToTop()">↑ Top</button>
-  <input type="text" id="searchInput" placeholder="Search…" 
-         style="flex: 1; max-width: 300px; font-size: 1em; padding: 5px; border-radius: 6px; border: none;">
   <button onclick="scrollToBottom()">↓ Bottom</button>
 </div>
-
 
   <script src="https://gvssmark.github.io/HAMSA/echo.json"></script>
   <script>
@@ -281,31 +337,74 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-
-searchInput.addEventListener('input', () => {
-  highlightSearchText(searchInput.value.trim());
-});
-
+   // displayMessages();
+    
+    
+    let currentMatchIndex = -1;
+let matchElements = [];
 
 function highlightSearchText(searchTerm) {
-  const allMessages = document.querySelectorAll('.message');
-  const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'); // escape special chars
+  matchElements = [];
+  currentMatchIndex = -1;
 
-  allMessages.forEach(msg => {
-    const html = msg.innerHTML.replace(/<\/?mark[^>]*>/g, ''); // clear old highlights
+  const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
 
+  document.querySelectorAll('.text').forEach(div => {
+    const original = div.textContent;
     if (!searchTerm) {
-      msg.innerHTML = html; // restore original if search is empty
+      div.innerHTML = original.replace(/\n/g, '<br>');
       return;
     }
 
-    // replace text nodes with highlights
-    const updatedHTML = html.replace(regex, match => `<mark class="highlight">${match}</mark>`);
-    msg.innerHTML = updatedHTML;
+    const highlighted = original.replace(regex, match => {
+      matchElements.push(match);
+      return `<mark class="highlight">${match}</mark>`;
+    });
+
+    div.innerHTML = highlighted.replace(/\n/g, '<br>');
   });
+
+  if (matchElements.length > 0) {
+    jumpToMatch(1);
+  }
 }
 
-    //displayMessages();
+
+function jumpToMatch(direction) {
+  const highlights = document.querySelectorAll('mark.highlight');
+  if (highlights.length === 0) return;
+
+  currentMatchIndex += direction;
+  if (currentMatchIndex < 0) currentMatchIndex = highlights.length - 1;
+  if (currentMatchIndex >= highlights.length) currentMatchIndex = 0;
+
+  const target = highlights[currentMatchIndex];
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  highlights.forEach(el => el.style.backgroundColor = 'yellow');
+  target.style.backgroundColor = 'orange';
+}
+
+function toggleSearchBar() {
+  const bar = document.getElementById('floatingSearchBar');
+  bar.style.display = (bar.style.display === 'block') ? 'none' : 'block';
+}
+
+const searchInput = document.getElementById('searchInput');
+
+searchInput.addEventListener('focus', () => {
+  searchInput.value = '';
+  highlightSearchText('');
+});
+
+searchInput.addEventListener('input', (e) => {
+  highlightSearchText(e.target.value.trim());
+});
+
+
   </script>
+  
+  
+
 </body>
 </html>
