@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -138,6 +139,12 @@
 }
 
 .also {color:blue; font-size:small; text-align:right;}
+
+.highlight {
+  background-color: yellow;
+  font-weight: bold;
+}
+
   </style>
 </head>
 <body>
@@ -156,8 +163,11 @@
 
   <div class="bottom-bar">
   <button onclick="scrollToTop()">↑ Top</button>
+  <input type="text" id="searchInput" placeholder="Search…" 
+         style="flex: 1; max-width: 300px; font-size: 1em; padding: 5px; border-radius: 6px; border: none;">
   <button onclick="scrollToBottom()">↓ Bottom</button>
 </div>
+
 
   <script src="https://gvssmark.github.io/HAMSA/echo.json"></script>
   <script>
@@ -270,6 +280,30 @@
       displayMessages();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+
+
+searchInput.addEventListener('input', () => {
+  highlightSearchText(searchInput.value.trim());
+});
+
+
+function highlightSearchText(searchTerm) {
+  const allMessages = document.querySelectorAll('.message');
+  const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'); // escape special chars
+
+  allMessages.forEach(msg => {
+    const html = msg.innerHTML.replace(/<\/?mark[^>]*>/g, ''); // clear old highlights
+
+    if (!searchTerm) {
+      msg.innerHTML = html; // restore original if search is empty
+      return;
+    }
+
+    // replace text nodes with highlights
+    const updatedHTML = html.replace(regex, match => `<mark class="highlight">${match}</mark>`);
+    msg.innerHTML = updatedHTML;
+  });
+}
 
     //displayMessages();
   </script>
