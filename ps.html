@@ -2,8 +2,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta name="viewport" content="width=device-width, maximum-scale=1, user-scalable=no, initial-scale=1.0" />
   <meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, maximum-scale=1, user-scalable=no, initial-scale=1.0" />
   <title>WhatsApp Chat Viewer</title>
   <style>
     body {
@@ -36,7 +36,6 @@
   z-index: 999;
    max-width: 800px;
     margin: 0 auto;
-	justify-content:center;
 }
 
 .bottom-bar {
@@ -133,6 +132,7 @@
   margin-bottom: 80px; /* enough space above bottom bar */
 }
 
+.also {color:blue; font-size:small; text-align:right;}
   </style>
 </head>
 <body>
@@ -223,9 +223,9 @@
 
         // Show topics if more than one
         let alsoTopics = '';
-        if (topics && topics.split(',').length > 1) {
-          alsoTopics = `<div class="topics">Also in: ${topics.split(',').map(t => t.trim()).join(', ')}</div>`;
-        }
+       // if (topics && topics.split(',').length > 1) {
+          alsoTopics = `<div class="topics also">#: ${topics.split(',').map(t => t.trim()).join(', ')}</div>`;
+       // }
 
         div.innerHTML = `
           <div class="meta">${date} ${time} • <span class="sender">${sender}</span></div>
