@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -229,15 +230,30 @@
   <script src="https://gvssmark.github.io/HAMSA/echo.json"></script>
   <script>
     //const chatData = window.chatData;
+ async function newdata () {
+      //loader.style.display = 'block';
+      
+        const response = await fetch('https://script.google.com/macros/s/AKfycbxDuDW1plTf8LusgXNHjA-5rflH33T07ahVKbAYmDTuza_A_qZ5Lfb4wFzSWIuktWVd0A/exec');
+         data = await response.json();
+data.shift()
+console.log(data)
+console.log(chatData)
+chatData = [...chatData, ...data]
+console.log(chatData)
+topicSender()
+}   
+    newdata ()
+    
 	chatData.shift()
     chatData = chatData.filter (a=> a[5]>0)
     const chatOutput = document.getElementById('chatOutput');
     const topicFilter = document.getElementById('topicFilter');
     const senderFilter = document.getElementById('senderFilter');
 
-    const topicSet = new Set();
-    const senderSet = new Set();
-    const serialMap = {};
+function topicSender(){
+ topicSet = new Set();
+     senderSet = new Set();
+     serialMap = {};
 
     chatData.forEach(entry => {
       serialMap[entry[5]] = entry;
@@ -250,18 +266,20 @@
         const bNum = parseInt(b.match(/\d+/)?.[0]) || 0;
         return aNum - bNum;
       }).forEach(topic => {
-      const opt = document.createElement('option');
+       opt = document.createElement('option');
       opt.value = topic;
       opt.textContent = topic;
       topicFilter.appendChild(opt);
     });
 
     [...senderSet].sort().forEach(sender => {
-      const opt = document.createElement('option');
+       opt = document.createElement('option');
       opt.value = sender;
       opt.textContent = sender;
       senderFilter.appendChild(opt);
     });
+
+}
 
     function displayMessages() {
       const selectedTopic = topicFilter.value;
