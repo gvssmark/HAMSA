@@ -9,6 +9,7 @@
 <meta name="theme-color" content="yellow">
 
   <script src="https://gvssmark.github.io/HAMSA/all0.json"></script>
+	<script src="https://gvssmark.github.io/HAMSA/all1.json"></script>
 
   <title>పద్యసౌందర్యం</title> 
   <style>
@@ -363,6 +364,8 @@ window.onclick = function(event) {if (event.target == modal) {modal.style.displa
 //setTimeout(function(){document.getElementById("counter").style.display = "none"; }, 10000);
     
     let allMessages = [];
+	   all1.shift()
+    all0 = [...all0, ...all1]
 allMessages = parseRawMessages(all0);
         showTopics();
         showSenders();
