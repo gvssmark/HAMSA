@@ -227,7 +227,7 @@
   <button onclick="scrollToBottom()">↓ Bottom</button>
 </div>
 
-  <script src="https://gvssmark.github.io/HAMSA/echo.json"></script>
+  <script src="https://gvssmark.github.io/HAMSA/chatData0.json"></script>
 	<script src="https://gvssmark.github.io/HAMSA/chatData1.json"></script>
   <script>
     //const chatData = window.chatData;
@@ -239,15 +239,15 @@
 data.shift()
 	 chatData1.shift()
 console.log(data)
-console.log(chatData)
-chatData = [...chatData, ...chatData1,  ...data]
+console.log(chatData0)
+chatData = [...chatData0, ...chatData1,  ...data]
 console.log(chatData)
 topicSender()
 }   
     newdata ()
     
-	chatData.shift()
-    chatData = chatData.filter (a=> a[5]>0)
+	chatData0.shift()
+    chatData = chatData0.filter (a=> a[5]>0)
     const chatOutput = document.getElementById('chatOutput');
     const topicFilter = document.getElementById('topicFilter');
     const senderFilter = document.getElementById('senderFilter');
