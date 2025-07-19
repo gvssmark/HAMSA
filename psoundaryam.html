@@ -370,37 +370,25 @@ allMessages = parseRawMessages(all0);
         showTopics();
         showSenders();
     window.onload = async function () {
-      //loader.style.display = 'block';
       try {
         const response = await fetch('https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec');
          data = await response.json();
-        
         filterupto = data[0][9]
-        msgdif = allMessages.length -  (filterupto -2)
-        msgdif === - 1 ?  modal.style.display='none': modal.style.display='block'
-        data = data.filter (a=> a[4]>filterupto)
-        data.shift()
+        maxsl = data[0][12] //7640
         data = [...all0, ...data]
         data = parseRawMessages(data);
         allMessages = data
-          
-        //counter.innerHTML=allMessages.length
-        //counter.style.display="block";
+        almsl   = allMessages.length+3
+        msgdif = maxsl - almsl
+msgdif === 0 ?  modal.style.display='none': modal.style.display='block'
         timer.style.display="none";
-        //allMessages = parseRawMessages(data);
-
-        
         showTopics();
         showSenders();
         printbtn[0].style.color='red'
         printbtn[1].style.color='yellow'
-
-        
-        //tabsArea.style.display = 'flex'; // show tab buttons
       } catch (e) {
         topicList.innerHTML = '<p style="color:red;">Error loading chat data.</p>';
       } finally {
-       // loader.style.display = 'none';
       }
     };
 
