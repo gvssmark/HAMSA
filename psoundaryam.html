@@ -376,7 +376,7 @@ allMessages = parseRawMessages(all0);
          data = await response.json();
         
         filterupto = data[0][9]
-        msgdif = allMessages.length - filterupto
+        msgdif = allMessages.length -  (filterupto -2)
         msgdif === - 1 ?  modal.style.display='none': modal.style.display='block'
         data = data.filter (a=> a[4]>filterupto)
         data.shift()
