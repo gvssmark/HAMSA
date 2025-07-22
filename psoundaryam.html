@@ -381,6 +381,11 @@ allMessages = parseRawMessages(all0);
         almsl   = allMessages.length+1
         msgdif = maxsl - almsl
 msgdif === 0 ?  modal.style.display='none': modal.style.display='block'
+	      unmatched = allMessages.map((message, index) => ({ ind: index+2, serial: message.serial  })).filter(a=> a.ind !== a.serial);
+console.clear()
+	      console.table(unmatched)
+
+
         timer.style.display="none";
         showTopics();
         showSenders();
