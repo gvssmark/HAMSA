@@ -511,25 +511,38 @@ if (typeof serial !== 'undefined') {
       chatOutput.scrollTop = 0;
     }
 
-    function showSenderMessages(sender) {
-      headingArea.innerHTML = `పద్యసౌందర్యం <small>Messages by ${sender}</small>`;
+   function showSenderMessages(sender) {
+      headingArea.innerHTML = `పద్యసౌందర్యం <small>${sender}</small>`;
       chatWrapper.style.display = 'none';
       chatOutput.style.display = 'block';
       navButtons.style.display = 'block';
       tabsArea.style.display = 'none';
       chatOutput.innerHTML = '';
 
-      const filtered = allMessages.filter(m => m.sender === sender);
+      let filtered = allMessages.filter(m => m.sender === sender);
 
-      filtered.forEach(({ sender, message, date, time, subtopic }) => {
-        const div = document.createElement('div');
-        div.className = 'message';
-        div.innerHTML = `<div class="sender">${sender}</div>${message}<small>${date} ${time} in ${subtopic}</small>`;
-        chatOutput.appendChild(div);
-      });
+
+      filtered.forEach(({ sender, message, date, time, subtopic, chainExtract, serial, chainTo }) => {
+  const div = document.createElement('div');
+
+  //      const stopic = subtopic.split(",").filter (a=> a.trim() != topic)
+  //      const stlisting = stopic.length>0 ? `also in ${stopic}`: "" 
+
+div.className = 'message';
+
+if (typeof serial !== 'undefined') {
+  div.id = `msg-${serial}`;
+}
+
+  const chained = chainExtract && chainTo
+  ? `<div class="chained" id=${chainTo}  onclick="scrollToMessage('${chainTo}')">↪ ${chainExtract}</div>`
+  : '';
+
+  div.innerHTML = `<div class="sender">${sender}</div>${chained}${message}<small>${date} ${time} in ${subtopic} </small>`;
+  chatOutput.appendChild(div);
+});
 
       chatOutput.scrollTop = 0;
-      
     }
 
     
