@@ -1,6 +1,8 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -134,11 +136,11 @@
   }
 
   #goUp {
-    top: 150px;
+    top: 150px; z-index: 1;
   }
 
   #goDown {
-    bottom: 50px;
+    bottom: 50px; z-index: 1;
   }
 
   .sender {
@@ -258,10 +260,17 @@
 .chained a:hover {
   /*text-decoration: underline;  */
 }
-    .modal{  display: none;  position: fixed;  z-index: 1;  padding-top: 100px;  left: 0;  top: 0;  width: 100%;  height: 100%;  overflow: auto;  background-color: rgb(0,0,0);  background-color: rgba(0,0,0,0.4);}
-.modal-content {  background-color: #fefefe;  margin: auto;  padding: 20px;  border: 1px solid #888;  width: 80%;}
-.close {  color: #aaaaaa;  float: right;  font-size: 28px;  font-weight: bold;}
-.close:hover,.close:focus {  color: #000;  text-decoration: none;  cursor: pointer;}
+.modal {  display: none;   position: fixed;  z-index: 1;   padding-top: 100px;   left: 0;  top: 0;  width: 100%;   height: 100%;   overflow: auto; 
+  background-color: rgb(0,0,0);   background-color: rgba(0,0,0,0.4); }
+
+.modal-content {  position: relative;  background-color: #fefefe;  margin: auto;  padding: 0;  border: 1px solid #888;  width: 100%;  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);  -webkit-animation-name: animatetop;  -webkit-animation-duration: 0.4s;  animation-name: animatetop;  animation-duration: 0.4s;  max-height: 470px;  overflow-y: scroll; }
+  .modal-content::-webkit-scrollbar {  display: none;}
+@-webkit-keyframes animatetop {  from {top:-300px; opacity:0}   to {top:0; opacity:1}}
+@keyframes animatetop { from {top:-300px; opacity:0}  to {top:0; opacity:1}}
+.modal-header {  padding: 2px 16px;  background-color: #5cb85c;  color: white;  position:fixed;  width:inherit;  height:40px;  line-height:1px;}
+.modal-body {padding-top: 50px; padding-left:20px;white-space: pre-wrap;  }
+#clsbtn {width:30px; height:30px; background:red; float:right; right:5px; padding:5px; border-radius:50px; position:fixed; text-align:center; line-height: 20px; font-size:small;}
+
 
 #counter{
     width: 50px;
@@ -338,10 +347,14 @@
   <button id="goDown" onclick="scrollToBottom()">🔽</button>
 <div id="myModal" class="modal">
   <div class="modal-content">
-    <span class="close">&times;</span>
-    <p id='alert'>All Messages not loaded<br>Try after 10 Minutes</p>
+    <div class="modal-header">
+      <div id='clsbtn' onclick=''>X</div>
+      <h4 id='modalhead'>Modal Header</h4>
+    </div>
+    <p class="modal-body">All Messages not loaded<br>Try after 10 Minutes </p>
   </div>
 </div>
+
   
   <script>
     const chatWrapper = document.getElementById('chatWrapper');
@@ -359,9 +372,14 @@
     const timer = document.getElementById('timer')
     
 var modal = document.getElementById("myModal");
-var span = document.getElementsByClassName("close")[0];
-span.onclick = function() {modal.style.display = "none";}
+var modalbody = document.getElementsByClassName("modal-body")[0];
+var modalhead = document.getElementById("modalhead");
+
 window.onclick = function(event) {if (event.target == modal) {modal.style.display = "none";}}
+
+
+var span = document.getElementById("clsbtn");
+span.onclick = function() {modal.style.display = "none";}
  // const counter = document.getElementById('counter');  
 //setTimeout(function(){document.getElementById("counter").style.display = "none"; }, 10000);
     
@@ -484,7 +502,7 @@ if (typeof serial !== 'undefined') {
 }
 
   const chained = chainExtract && chainTo
-  ? `<div class="chained"><em><a href="#msg-${chainTo}" onclick="scrollToMessage('${chainTo}'); return false;">↪ ${chainExtract}</a></em></div>`
+  ? `<div class="chained" id=${chainTo}  onclick="scrollToMessage('${chainTo}')">↪ ${chainExtract}</div>`
   : '';
 
   div.innerHTML = `<div class="sender">${sender}</div>${chained}${message}<small>${date} ${time}${topic === "0. అన్ని సందేశాలు" ? ` in ${subtopic}` :  ` ${stlisting}` } </small>`;
@@ -494,67 +512,39 @@ if (typeof serial !== 'undefined') {
       chatOutput.scrollTop = 0;
     }
 
-    function showSenderMessages(sender) {
-      headingArea.innerHTML = `పద్యసౌందర్యం <small>Messages by ${sender}</small>`;
+   function showSenderMessages(sender) {
+      headingArea.innerHTML = `పద్యసౌందర్యం <small>${sender}</small>`;
       chatWrapper.style.display = 'none';
       chatOutput.style.display = 'block';
       navButtons.style.display = 'block';
       tabsArea.style.display = 'none';
       chatOutput.innerHTML = '';
 
-      const filtered = allMessages.filter(m => m.sender === sender);
+      let filtered = allMessages.filter(m => m.sender === sender);
 
-      filtered.forEach(({ sender, message, date, time, subtopic }) => {
-        const div = document.createElement('div');
-        div.className = 'message';
-        div.innerHTML = `<div class="sender">${sender}</div>${message}<small>${date} ${time} in ${subtopic}</small>`;
-        chatOutput.appendChild(div);
-      });
-
-      chatOutput.scrollTop = 0;
-      
-      //goUpeBtn.style.display= 'block';
-      //goDowneBtn.style.display= 'block';
-      
-    }
-
-/*
-function showSenderMessages(sender) {
-      headingArea.innerHTML = `పద్యసౌందర్యం <small>Messages by ${sender}</small>`;
-      chatWrapper.style.display = 'none';
-      chatOutput.style.display = 'block';
-      navButtons.style.display = 'block';
-      tabsArea.style.display = 'none';
-      chatOutput.innerHTML = '';
-
-      const filtered = allMessages.filter(m => m.sender === sender);
 
       filtered.forEach(({ sender, message, date, time, subtopic, chainExtract, serial, chainTo }) => {
-      
-      
   const div = document.createElement('div');
+
+  //      const stopic = subtopic.split(",").filter (a=> a.trim() != topic)
+  //      const stlisting = stopic.length>0 ? `also in ${stopic}`: "" 
+
 div.className = 'message';
+
 if (typeof serial !== 'undefined') {
   div.id = `msg-${serial}`;
 }
 
   const chained = chainExtract && chainTo
-  ? `<div class="chained"><em><a href="#msg-${chainTo}" onclick="scrollToMessage('${chainTo}'); return false;">↪ ${chainExtract}</a></em></div>`
+  ? `<div class="chained" id=${chainTo}  onclick="scrollToMessage('${chainTo}')">↪ ${chainExtract}</div>`
   : '';
 
-  div.innerHTML = `<div class="sender">${sender}</div>${chained}${message}<small>${date} ${time} in ${subtopic}</small>`;
+  div.innerHTML = `<div class="sender">${sender}</div>${chained}${message}<small>${date} ${time} in ${subtopic} </small>`;
   chatOutput.appendChild(div);
 });
 
-
       chatOutput.scrollTop = 0;
-      
-      //goUpeBtn.style.display= 'block';
-      //goDowneBtn.style.display= 'block';
-      
     }
-
-*/
 
     
     function toggleTopicView() {
@@ -574,14 +564,14 @@ if (typeof serial !== 'undefined') {
     }
 
 function scrollToMessage(serial) {
-  const el = document.getElementById(`msg-${serial}`);
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    el.classList.add('highlightChained');
-    setTimeout(() => el.classList.remove('highlightChained'), 2000);
-  } else {
-    alert("Referenced message is not visible in this view.");
-  }
+//alert(serial)
+chserial = serial
+chmsg = allMessages.filter(a=> a.serial === chserial*1)[0]
+//alert(chmsg.sender + chmsg.date + chmsg.message)
+modalhead.innerHTML = `${chmsg.sender} - ${chmsg.date} `
+modalbody.innerHTML = chmsg.message
+modal.style.display='block'
+
 }
 
 
