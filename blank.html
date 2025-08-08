@@ -126,6 +126,13 @@ data =['a', 'b', 'c', 'a']
 function unq(a) { return Array.from(new Set(a)); }
 unq(a) will return (3) ['a', 'b', 'c']
 
+
+-----------------GOOGLE SHEETS QUERY TO MERGE TWO QUERY OUTPUTS ------------------
+
+  =QUERY(
+  {QUERY(mydata, "SELECT B, C, D, E , F, G, H, I, J, 'Seva1' ",0); 
+  QUERY(mydata, "SELECT B, C, D, E , F, K, L, M, N, 'Seva2' ",0)}, 
+  "SELECT Col1, Col2, Col3, Col4, Col5, Col6, Col7, Col8, Col9, Col10   WHERE Col6 <>'' ORDER BY Col9 ",0)  
   
 </pre>
 <script>
