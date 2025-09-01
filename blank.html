@@ -151,6 +151,16 @@ async function fetchData() {
    console.log(raw.filter(a=> a[0]>0))
 }
 fetchData()
+
+  The following is the the google appscript and published link
+  function doGet(e) {
+ var sheetId   = e.parameter.sheetid;
+ var sheetName = e.parameter.sheetname;
+ var dataValues= SpreadsheetApp.openById(sheetId).getSheetByName(sheetName).getDataRange().getValues()
+ return ContentService.createTextOutput(JSON.stringify(dataValues) ).setMimeType(ContentService.MimeType.JSON); 
+}
+//https://script.google.com/macros/s/AKfycbzxttyJO3JKtezQh_lyZLc6tug6kwQZ4WrTTmNstMYdteYxbYQPr4wgoJX0ANe8AWLV/exec
+
 </pre>
 <script>
 
