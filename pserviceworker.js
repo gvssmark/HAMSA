@@ -4,7 +4,7 @@ self.addEventListener('install', (e) => {
       'pindex.js',
       'p.html',
       'images/p192.png',
-      'images/p.png',
+      'images/p512.png',
             ])),
   );
 });
@@ -17,3 +17,4 @@ self.addEventListener('fetch', (e) => {
   );
 
 });
+
