@@ -1,0 +1,27 @@
+{
+    "short_name": "P",
+    "name": "P Webpage",
+    "icons": [
+      {
+        "src": "images/p192.png",
+        "type": "image/png",
+        "sizes": "192x192",
+           "purpose": "any maskable"
+      },
+              {
+        "src": "images/p512.png",
+        "type": "image/png",
+        "sizes": "512x512" ,
+                   "purpose": "any maskable"
+
+      }
+
+    ],
+    "start_url": "p.html",
+    "background_color": "#ccff99",
+      "theme_color": "#3367D6",
+    "display": "standalone",
+    "description": "P",
+     "orientation" : "portrait" 
+    }
+
