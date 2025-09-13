@@ -5,6 +5,7 @@ self.addEventListener('install', (e) => {
       'p.html',
       'images/p192.png',
       'images/p512.png',
+      'param.js'
             ])),
   );
 });
@@ -17,5 +18,6 @@ self.addEventListener('fetch', (e) => {
   );
 
 });
+
 
 
