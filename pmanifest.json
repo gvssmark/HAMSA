@@ -17,11 +17,12 @@
       }
 
     ],
-    "start_url": "p.html",
+    "start_url": "psoundaryam.html",
     "background_color": "#ccff99",
       "theme_color": "#3367D6",
     "display": "standalone",
     "description": "P",
      "orientation" : "portrait" 
     }
+
 
