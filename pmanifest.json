@@ -1,6 +1,6 @@
 {
     "short_name": "P",
-    "name": "P Webpage",
+    "name": "P",
     "icons": [
       {
         "src": "images/p192.png",
@@ -24,5 +24,6 @@
     "description": "P",
      "orientation" : "portrait" 
     }
+
 
 
