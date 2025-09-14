@@ -2,7 +2,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open('phtml').then((cache) => cache.addAll([ 
       'pindex.js',
-      'p.html',
+      'psoundaryam.html',
       'images/p192.png',
       'images/p512.png',
       'param.js'
@@ -18,6 +18,7 @@ self.addEventListener('fetch', (e) => {
   );
 
 });
+
 
 
 
