@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, maximum-scale=1, user-scalable=no, initial-scale=1.0">
+<meta name="theme-color" content="blue">
+
+
+  <title>సరదామాట Report</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f3f3f3; }
+    .fixed-header, .fixed-search {
+      position: fixed;
+      width: 100%;
+      left: 0;
+      z-index: 100;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    }
+    .fixed-header {
+      top: 0;
+      padding: 12px 20px;
+      font-size: 1.6em;
+      color: #004080;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .fixed-search {
+      top: 54px;
+      padding: 10px 18px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .search-box {
+      width: 98%;
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #b0b0b0;
+      border-radius: 6px;
+    }
+    .cards-container {
+      max-width: 650px;
+      margin: 130px auto 0 auto;
+      padding: 0 8px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 7px;
+      box-shadow: 0 1px 5px rgba(0,0,0,.08);
+      margin: 14px 0;
+      padding: 14px 18px;
+      transition: box-shadow .15s;
+    }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,50,.13); }
+    .card-date { font-size: .98em; color: #555; }
+    .card-topic { font-size: 1.14em; color: #0052a0; margin-bottom: 6px; }
+    .card-message { margin: 10px 0; font-size: 1.09em; color: #323232; }
+    #groupBtn {
+      display: none;
+      position: fixed;
+      right: 25px; bottom: 32px;
+      padding: 13px 22px;
+      background: #0051cc;
+      color: #fff;
+      border: none;
+      font-size: 1.18em;
+      border-radius: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+      cursor: pointer;
+      z-index: 99;
+    }
+    
+    .fixed-search {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+}
+.search-box {
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto;
+  padding: 10px;
+  font-size: 1em;
+  border-radius: 6px;
+  border: 1px solid #b0b0b0;
+  box-sizing: border-box;
+}
+  </style>
+</head>
+<body>
+
+  <div class="fixed-header">సరదామాట</div>
+  <div class="fixed-search">
+  <input type="text" class="search-box" id="searchInput" placeholder="Search..." />
+</div>
+  <div class="cards-container" id="psrreport"></div>
+  <button id="groupBtn">Go Top</button>
+
+  <script>
+    const ShId = '1mFvcTZgHV86cpgq89jz6NiLx2C_xVmysDyh16LsxBT8';
+    const ShName = 'YasodeepikaluExtracted';
+    const appscripturl = 'https://script.google.com/macros/s/AKfycbxeL3EhO9OCwAup_eJzrMZ6b6tcxmJDydUYZctMLr2f3KdusHuAhBBebkoKw0y5lsDg/exec';
+    const dataUrl = `${appscripturl}?sheetid=${ShId}&sheetname=${ShName}`;
+
+    let psrdata = [];
+
+    async function fetchData() {
+      const response = await fetch(dataUrl);
+      const raw = await response.json();
+      const data = raw.map(([date, time, sender, message, length, topic]) => 
+        ({ date, time, sender, message, length, topic }));
+      psrdata = data.filter(a => a.sender === "~Psriramarao" && a.topic !== "");
+      renderCards(psrdata);
+    }
+
+    function renderCards(records) {
+      const container = document.getElementById('psrreport');
+      container.innerHTML = '';
+      records.forEach(rec => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = 
+          `<div class="card-date">${rec.date}</div>
+           <div class="card-topic">${rec.topic}</div>
+           <div class="card-message">${rec.message}</div>`;
+        container.appendChild(div);
+      });
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      const val = e.target.value.trim().toLowerCase();
+      const filtered = psrdata.filter(rec =>
+        rec.topic.toLowerCase().includes(val) ||
+        rec.message.toLowerCase().includes(val) ||
+        rec.date.toLowerCase().includes(val)
+      );
+      renderCards(filtered);
+    });
+
+    function handleScroll() {
+      const btn = document.getElementById('groupBtn');
+      if (window.scrollY > 250) btn.style.display = "block";
+      else btn.style.display = "none";
+    }
+    window.addEventListener('scroll', handleScroll);
+
+    fetchData();
+    
+     document.getElementById('groupBtn').addEventListener('click', function() {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  });
+  
+  </script>
+</body>
+</html>
