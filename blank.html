@@ -17,6 +17,15 @@ img {
 </div>
 
 <pre>
+<pre><b>To Post Data to Google Sheet</b>
+function writeToLog(srno,name){
+formData = new FormData();
+formData.append('fname', srno);
+formData.append('lname', name );
+fetch("https://script.google.com/macros/s/AKfycbyfHambsSuB4tIQiUIIqIf72m7zgl7hT4FsW8N3TIVeQu9U6Po/exec",{body: formData,method: "post"});}
+Call   writeToLog(30349,'GVSS MARKANDEYULU')
+</pre>
+  
 
 You can use the map() function to extract the 7th and 8th elements from each sub-array in myArray. Here's how you can do it:
  myArray = [
