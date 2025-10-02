@@ -1,5 +1,3 @@
-
-
 <style>
 img {
   display: block;
@@ -15,9 +13,29 @@ img {
 <div class="image">
 <b>GVSS Markandeyulu</b><br>Org Secretary<br>9989036183
 </div>
+<pre>
+<b><u>Function to Extract values</u></b>
+function parseChatMessage(input) {
+  const regex = /^\[(\d{2}\/\d{2}\/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)/;
+  const match = input.match(regex);
+  if (!match) return null;
+  const [, date, time, sender, message] = match;
+  return { date, time, sender, message };
+}
+mystr ="[01/10/2025, 09:53:11] ~Gayatri T: శ్రీగురుభ్యోనమః శ్రీ శ్రీపాద కృష్ణమూర్తిగారు రచించిన"
+parseChatMessage(mystr) will get
+
+date: "01/10/2025"
+time: "09:53:11"
+sender: "~Gayatri T"
+message: "శ్రీగురుభ్యోనమః శ్రీ శ్రీపాద కృష్ణమూర్తిగారు రచించిన"
+
+</pre>
+
+
 
 <pre>
-<pre><b>To Post Data to Google Sheet</b>
+<pre><b><u>To Post Data to Google Sheet</u></b>
 function writeToLog(srno,name){
 formData = new FormData();
 formData.append('fname', srno);
