@@ -1,3 +1,6 @@
+
+
+
 <style>
 img {
   display: block;
@@ -31,7 +34,14 @@ sender: "~Gayatri T"
 message: "శ్రీగురుభ్యోనమః శ్రీ శ్రీపాద కృష్ణమూర్తిగారు రచించిన"
 
 </pre>
+<pre>
+<b><u>Google sheets formula for splitting mystr in various cells</b></u>
+=ARRAYFORMULA(IF(A2:A="", "", SPLIT(REGEXREPLACE(A2:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "$1|$2|$3|$4"), "|")))
 
+if the data is from another sheet
+=ARRAYFORMULA(IF(PadyaSoundaryamMain!A2:A="", "", SPLIT(REGEXREPLACE(PadyaSoundaryamMain!A2:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "$1|$2|$3|$4"), "|")))
+
+</pre>
 
 
 <pre>
