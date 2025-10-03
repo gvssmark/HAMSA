@@ -38,10 +38,11 @@ message: "శ్రీగురుభ్యోనమః శ్రీ శ్ర�
 <pre>
 <b><u>Google sheets formula for splitting mystr in various cells</b></u>
 =ARRAYFORMULA(IF(A2:A="", "", SPLIT(REGEXREPLACE(A2:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "'$1|'$2|$3|$4"), "|")))
-
+=ARRAYFORMULA(IF(A1:A="", "", SPLIT(REGEXREPLACE(A1:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "'$1␟'$2␟$3␟$4"), "␟"))) - This contrains a rare delimiter
 if the data is from another sheet
 =ARRAYFORMULA(IF(PadyaSoundaryamMain!A2:A="", "", SPLIT(REGEXREPLACE(PadyaSoundaryamMain!A2:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "'$1|'$2|$3|$4"), "|")))  
-Note the ' before $1 and $2. This will shwon as strings instead of Date and time objects
+=ARRAYFORMULA(IF(PadyaSoundaryamMain!A2:A="", "", SPLIT(REGEXREPLACE(PadyaSoundaryamMain!A2:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "'$1␟'$2␟$3␟$4"), "␟")))  // This also a rare delimiter
+Note the ' before $1 and $2. This will show strings instead of Date and time objects
 </pre>
 
 
