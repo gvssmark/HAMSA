@@ -37,11 +37,11 @@ message: "శ్రీగురుభ్యోనమః శ్రీ శ్ర�
 </pre>
 <pre>
 <b><u>Google sheets formula for splitting mystr in various cells</b></u>
-=ARRAYFORMULA(IF(A2:A="", "", SPLIT(REGEXREPLACE(A2:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "$1|$2|$3|$4"), "|")))
+=ARRAYFORMULA(IF(A2:A="", "", SPLIT(REGEXREPLACE(A2:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "'$1|'$2|$3|$4"), "|")))
 
 if the data is from another sheet
-=ARRAYFORMULA(IF(PadyaSoundaryamMain!A2:A="", "", SPLIT(REGEXREPLACE(PadyaSoundaryamMain!A2:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "$1|$2|$3|$4"), "|")))
-
+=ARRAYFORMULA(IF(PadyaSoundaryamMain!A2:A="", "", SPLIT(REGEXREPLACE(PadyaSoundaryamMain!A2:A, "^\[(\d{2}/\d{2}/\d{4}), (\d{2}:\d{2}:\d{2})\]\s+(.*?)\:\s+(.*)", "'$1|'$2|$3|$4"), "|")))  
+Note the ' before $1 and $2. This will shwon as strings instead of Date and time objects
 </pre>
 
 
