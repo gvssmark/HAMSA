@@ -49,8 +49,39 @@ initReport(updateUI);
 
    
 </script>
-</pre>
 
+  <style>
+ .cards-container {text-align:center; margin-bottom:36px;}
+ .card {background:#0fff; border-radius:9px; box-shadow:0 3px 10px rgba(50,50,50,0.13);  max-width:96vw; padding: 4px; font-size:x-small;margin:10px;}
+</style>
+<div id="cardList" class="cards-container"></div>
+initReport(generatereport)
+function generatereport(){
+const list = document.getElementById("cardList");
+list.innerHTML = "";
+activeMembers.slice(0,5).forEach(row => {
+        let card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML =`<h3>${row.name || ""}</h3> 
+        Mobile: ${row.mobile1}/ SR No: ${row.srno} / ${row.newempid}/ Mem No: ${row.id}`;
+        list.appendChild(card);
+      });}
+
+</pre>
+<script>
+initReport(generatereport)
+function generatereport(){
+const list = document.getElementById("cardList");
+list.innerHTML = "";
+activeMembers.slice(0,5).forEach(row => {
+        let card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML =`<h3>${row.name || ""}</h3> 
+        Mobile: ${row.mobile1}/ SR No: ${row.srno} / ${row.newempid}/ Mem No: ${row.id}`;
+        list.appendChild(card);
+      });}
+  
+</script>
 <pre>
 <b><u>Function to Extract values</u></b>
 function parseChatMessage(input) {
