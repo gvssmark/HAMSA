@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,54 +7,38 @@
   <script src="https://gvssmark.github.io/HAMSA/harivamsa0.json"></script>
   <script src="https://gvssmark.github.io/HAMSA/harivamsa.json"></script>
   <style>
-    body {
-      margin: 0;
-      padding-top: 115px; /* space for fixed header */
-      font-family: sans-serif;
-    }
-    #header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: #f8f8f8;
-      padding: 1px;
-      border-bottom: 1px solid #ccc;
-      z-index: 1000;
-      text-align: center;
-    }
-    #searchInput {
-      width: 80%;
-      padding: 5px;
-      font-size: 16px;
-      margin-top: 0px;
-    }
-    #cardList {
-      padding: 10px;
-      max-width:480px;
-    }
-    .card {
-      padding: 4px;
-      border-radius: 15px;
-      border: 1px solid black;
-      margin-bottom: 10px;
-      white-space: pre-wrap;
-      font-size: small;
-      max-width: 480px;
-      margin: 0 auto 10px auto;
-      overflow-y:auto;
-    }
-    .sender {
-      color: red;
-      font-size: large;
-    }
-    .datetime {
-      color: blue;
-      font-style: italic;
-    }
+    body { margin: 0;      padding-top: 115px; /* space for fixed header */      font-family: sans-serif;      position: relative;    }
+    #header {      position: fixed;      top: 0;     left: 0;      right: 0;      background: #f8f8f8;      padding: 1px;      border-bottom: 1px solid #ccc;      z-index: 1000;      text-align: center;    }
+    #searchInput {      width: 80%;      padding: 5px;      font-size: 16px;      margin-top: 0px;    }
+    #cardList {      padding: 10px;      max-width:480px;      margin:0 auto;    }
+    .card {      padding: 4px;      border-radius: 15px;      border: 1px solid black;      margin-bottom: 10px;      white-space: pre-wrap;      font-size: small;      max-width: 480px;      margin: 0 auto 10px auto;
+      overflow-y:auto;    }
+    .sender {      color: red;      font-size: large;    }
+    .datetime {      color: blue;      font-style: italic;    }
+    .topic {color:red; display:flex; justify-content:right;}
+    #menuToggle {  position: fixed;  top: 10px;  left: 10px;  font-size: 24px;  background: none;  border: none;  z-index: 1001;  color: black;  cursor: pointer;}
+#sidebar {  position: fixed;  top: 60px;  left: 0;  width: 200px;  height: 100%;  background: #f0f0f0;  padding: 0px 10px;  box-shadow: 2px 0 5px rgba(0,0,0,0.1);  transform: translateX(-220px);  transition: transform 0.3s ease;
+  z-index: 1000;}
+#sidebar.open {  transform: translateX(0);}
+#menuContent {  margin-top: 60px;}
+select {  width: 100%;  margin-bottom: 15px;  padding: 5px;  font-size: 14px;}
   </style>
 </head>
 <body>
+<button id="menuToggle">☰</button>
+<div id="sidebar">
+  <div id="menuContent">
+    <label for="topicSelect">Topic:</label>
+    <select id="topicSelect" onchange="handleDropdown('topic')">
+      <option value="">All</option>
+    </select>
+
+    <label for="nameSelect">Name:</label>
+    <select id="nameSelect" onchange="handleDropdown('name')">
+      <option value="">All</option>
+    </select>
+  </div>
+</div>
   <div id="header">
     <h2>హరివంశసత్సంగము</h2>
     <input type="text" id="searchInput" placeholder="Search messages..." oninput="filterCards()">
@@ -64,7 +49,7 @@
     harivamsa0.shift();
     harivamsa.shift();
     const test = [...harivamsa0, ...harivamsa];
-    harivamsa = test.map(([date, time, name, message]) => ({ date, time, name, message }))
+    harivamsa = test.map(([date, time, name, message,l,topic]) => ({ date, time, name, message,l,topic }))
                     .filter(a => a.message.length > 0);
 
     function generatereport(filtered = harivamsa) {
@@ -74,7 +59,8 @@
         let card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `<span class='sender'>${row.name || ""}</span> - <span class='datetime'>${row.date}-${row.time}</span>
-${row.message}`;
+${row.message}
+<span class='topic'>${row.topic}</span>`;
         list.appendChild(card);
       });
     }
@@ -95,6 +81,60 @@ ${row.message}`;
       const date = new Date(input);
       return isNaN(date.getTime()) ? '' : date.toLocaleString("en-GB", { timeZone: "Asia/Kolkata" }).substring(0, 10);
     }
+    
+document.getElementById("menuToggle").onclick = () => {
+  document.getElementById("sidebar").classList.toggle("open");
+};
+
+// Populate dropdowns
+const topicSet = new Set();
+const nameSet = new Set();
+harivamsa.forEach(row => {
+  if (row.topic) topicSet.add(row.topic);
+  if (row.name) nameSet.add(row.name);
+});
+
+const topicSelect = document.getElementById("topicSelect");
+const nameSelect = document.getElementById("nameSelect");
+
+[...topicSet].sort().forEach(topic => {
+  const opt = document.createElement("option");
+  opt.value = topic;
+  opt.textContent = topic;
+  topicSelect.appendChild(opt);
+});
+
+[...nameSet].sort().forEach(name => {
+  const opt = document.createElement("option");
+  opt.value = name;
+  opt.textContent = name;
+  nameSelect.appendChild(opt);
+});
+
+function handleDropdown(changed) {
+  const topicSelect = document.getElementById("topicSelect");
+  const nameSelect = document.getElementById("nameSelect");
+
+  if (changed === "topic") {
+    nameSelect.value = "";
+  } else if (changed === "name") {
+    topicSelect.value = "";
+  }
+
+  const selectedTopic = topicSelect.value;
+  const selectedName = nameSelect.value;
+
+  const filtered = harivamsa.filter(row => {
+    const topicMatch = selectedTopic === "" || row.topic === selectedTopic;
+    const nameMatch = selectedName === "" || row.name === selectedName;
+    return topicMatch && nameMatch;
+  });
+
+  generatereport(filtered);
+ window.scroll(0,0)
+  // Slide sidebar away
+  document.getElementById("sidebar").classList.remove("open");
+}
   </script>
 </body>
 </html>
