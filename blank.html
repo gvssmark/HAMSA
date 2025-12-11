@@ -25,6 +25,21 @@ b, u {color:red;}
 &lt;script src="https://gvssmark.github.io/ibra/mylib.js"&gt;&lt;/script>;
 &lt;script>initReport()&gt;&lt;/script>&gt;
 
+<pre>
+<b><u>Date in Indian format</u></b>
+  date = new Date("1950-08-01T18:30:00.000Z");
+
+// Request a weekday along with a long date
+ options = {
+  
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+};
+console.log(date.toLocaleString("en-IN", options));
+
+</pre>
+  
 <script src="https://gvssmark.github.io/ibra/mylib.js"></script>
 <script>initReport()</script>
 
@@ -47,6 +62,15 @@ b, u {color:red;}
         activeMembers.slice(0, 10).map(m => m.name).join("\n");
     }
 initReport(updateUI);
+date = new Date("1950-08-01T18:30:00.000Z");
+
+// Request a weekday along with a long date
+ options = {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+};
+console.log(date.toLocaleString("en-IN", options));
 
    
 </script>
