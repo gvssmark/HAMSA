@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+ <script src="https://gvssmark.github.io/HAMSA/all0.json"></script>
+	<script src="https://gvssmark.github.io/HAMSA/all1.json"></script>
+<body>
+
+<h1>PadyaSoundaryam</h1>
+
+<p>Padya Soundaryam Data download</p>
+
+<script>
+
+async function dnld() {
+      
+         response = await fetch('https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec');
+        data = await response.json();
+        data = [...all0, ...all1, ...data]
+        console.clear()
+        console.log(data)
+        downloadCSV(data);
+        }
+        
+ function downloadCSV(data) {
+
+        const result = data.map(subArray => subArray[0]).join('\n\n');
+        const blob = new Blob([result], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "DataFromGitHub.txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      
+ 
+ dnld()  
+     
+        
+</script>
+
+</body>
+</html>
+
