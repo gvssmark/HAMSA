@@ -1,45 +1,72 @@
 <!DOCTYPE html>
 <html>
  <script src="https://gvssmark.github.io/HAMSA/all0.json"></script>
-	<script src="https://gvssmark.github.io/HAMSA/all1.json"></script>
+ <script src="https://gvssmark.github.io/HAMSA/all1.json"></script>
 <body>
 
 <h1>PadyaSoundaryam</h1>
-
 <p>Padya Soundaryam Data download</p>
 
 <script>
 
 async function dnld() {
-      
-         response = await fetch('https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec');
-        data = await response.json();
-        data = [...all0, ...all1, ...data]
-        console.clear()
-        console.log(data)
-        downloadCSV(data);
-        }
-        
- function downloadCSV(data) {
 
-        const result = data.map(subArray => subArray[0]).reverse().join('\n\n');
-        const blob = new Blob([result], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "DataFromGitHub.txt";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+    let response = await fetch('https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec');
+    let data = await response.json();
 
-      
- 
- dnld()  
-     
-        
+all0.shift()
+all1.shift()
+data.shift()
+
+    data = [...all0, ...all1, ...data];
+    
+
+    console.clear();
+    console.log(data);
+
+    downloadCSV(data);
+}
+
+function downloadCSV(data) {
+
+    const regex = /\[(\d{2})\/(\d{2})\/(\d{4}), (\d{2}):(\d{2}):(\d{2})\]/;
+
+    const sorted = data
+        .map(subArray => subArray[0])
+        .sort((a, b) => {
+
+            const matchA = a.match(regex);
+            const matchB = b.match(regex);
+
+            if (!matchA || !matchB) return 0;
+
+            const dateA = new Date(`${matchA[3]}-${matchA[2]}-${matchA[1]}T${matchA[4]}:${matchA[5]}:${matchA[6]}`);
+            const dateB = new Date(`${matchB[3]}-${matchB[2]}-${matchB[1]}T${matchB[4]}:${matchB[5]}:${matchB[6]}`);
+
+            // Different dates → latest first
+            if (dateA.toDateString() !== dateB.toDateString()) {
+                return dateB - dateA;
+            }
+
+            // Same date → oldest time first
+            return dateA - dateB;
+        })
+        .join('\n\n🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹');
+
+    const blob = new Blob([sorted], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "DataFromGitHub.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+dnld();
+
 </script>
 
 </body>
 </html>
-
