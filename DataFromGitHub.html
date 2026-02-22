@@ -1,72 +1,57 @@
 <!DOCTYPE html>
 <html>
- <script src="https://gvssmark.github.io/HAMSA/all0.json"></script>
- <script src="https://gvssmark.github.io/HAMSA/all1.json"></script>
+<head>
+    <title>PadyaSoundaryam Data Download</title>
+</head>
 <body>
-
-<h1>PadyaSoundaryam</h1>
-<p>Padya Soundaryam Data download</p>
-
-<script>
-
-async function dnld() {
-
-    let response = await fetch('https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec');
-    let data = await response.json();
-
-all0.shift()
-all1.shift()
-data.shift()
-
-    data = [...all0, ...all1, ...data];
-    
-
-    console.clear();
-    console.log(data);
-
-    downloadCSV(data);
-}
-
-function downloadCSV(data) {
-
-    const regex = /\[(\d{2})\/(\d{2})\/(\d{4}), (\d{2}):(\d{2}):(\d{2})\]/;
-
-    const sorted = data
-        .map(subArray => subArray[0])
-        .sort((a, b) => {
-
-            const matchA = a.match(regex);
-            const matchB = b.match(regex);
-
-            if (!matchA || !matchB) return 0;
-
-            const dateA = new Date(`${matchA[3]}-${matchA[2]}-${matchA[1]}T${matchA[4]}:${matchA[5]}:${matchA[6]}`);
-            const dateB = new Date(`${matchB[3]}-${matchB[2]}-${matchB[1]}T${matchB[4]}:${matchB[5]}:${matchB[6]}`);
-
-            // Different dates → latest first
-            if (dateA.toDateString() !== dateB.toDateString()) {
-                return dateB - dateA;
+    <h1>PadyaSoundaryam</h1>
+    <p>Downloading Padya Soundaryam Data...</p>
+    <script src="https://gvssmark.github.io/HAMSA/all0.json"></script>
+    <script src="https://gvssmark.github.io/HAMSA/all1.json"></script>
+    <script>
+        async function downloadData() {
+            try {
+                // Fetch latest data
+                const response = await fetch('https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec');
+                const latestData = await response.json();
+                // Combine all data (remove first item from each)
+               const allData = [...all0.slice(1),  ...all1.slice(1),  ...latestData.slice(1)];
+                 // Sort by date/time and download
+                downloadSortedData(allData);
+            } catch (error) {
+                console.error('Download failed:', error);
             }
+        }
 
-            // Same date → oldest time first
-            return dateA - dateB;
-        })
-        .join('\n\n🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹');
+        function downloadSortedData(data) {
+            const regex = /\[(\d{2})\/(\d{2})\/(\d{4}), (\d{2}):(\d{2}):(\d{2})\]/;
+            const sortedText = data
+                .map(item => item[0])
+                .sort((a, b) => {
+                    const matchA = a.match(regex);
+                    const matchB = b.match(regex);
+                    if (!matchA || !matchB) return 0;
+                    const dateA = new Date(`${matchA[3]}-${matchA[2]}-${matchA[1]}T${matchA[4]}:${matchA[5]}:${matchA[6]}`);
+                    const dateB = new Date(`${matchB[3]}-${matchB[2]}-${matchB[1]}T${matchB[4]}:${matchB[5]}:${matchB[6]}`);
+                    // Latest date first, then oldest time first for same day
+                    return dateA.toDateString() !== dateB.toDateString() 
+                        ? dateB - dateA 
+                        : dateA - dateB;
+                })
+                .join('\n\n🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹🌹');
+            
+            // Create and trigger download
+            const blob = new Blob([sortedText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'PadyaSoundaryam.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
 
-    const blob = new Blob([sorted], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "DataFromGitHub.txt";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
-
-dnld();
-
-</script>
-
+        // Auto-run on page load
+        downloadData();
+    </script>
 </body>
 </html>
