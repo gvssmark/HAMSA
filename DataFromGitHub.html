@@ -22,7 +22,7 @@ async function dnld() {
         
  function downloadCSV(data) {
 
-        const result = data.map(subArray => subArray[0]).join('\n\n');
+        const result = data.map(subArray => subArray[0]).reverse().join('\n\n');
         const blob = new Blob([result], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
