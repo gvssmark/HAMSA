@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Sheets Data Fetcher</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input, button { margin: 8px 0; padding: 8px; width: 100%; }
+    pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+
+<h2>Google Sheets Data Fetcher</h2>
+
+<label>Google Sheet ID:</label>
+<input type="text" id="sheetId" placeholder="Enter your Google Sheet ID" value='1IuJZto0zCYDAmrQaY8g93Ynl6ev0bxRLb0V3dINi-E8'/>
+
+<label>Sheet Name:</label>
+<input type="text" id="sheetName" placeholder="Enter the sheet name" value='PadyaSoundaryam' />
+
+<label>Google Apps Script Web App URL:</label>
+<input type="text" id="scriptUrl" placeholder="Enter published Apps Script URL" value='https://script.google.com/macros/s/AKfycbwwDCH5iSKySNxSoz1wKf5ILKfvRt1fnFaILJ3Z40E-gOSl_AnTcGabtVS9bVDMfLSP/exec'/>
+
+<label>Variable Name (e.g. Data):</label>
+<input type="text" id="fileNamePrefix" placeholder="This becomes 'Data = ...'" />
+
+<button onclick="fetchSheetData()">Fetch Data</button>
+<button onclick="downloadJSON()" id="downloadBtn" style="display:none;">Download JSON</button>
+
+<h3>Output:</h3>
+<pre id="output"></pre>
+
+<script>
+  let latestData = null;
+
+  async function fetchSheetData() {
+    const sheetId = document.getElementById("sheetId").value.trim();
+    const sheetName = document.getElementById("sheetName").value.trim();
+    const scriptUrl = document.getElementById("scriptUrl").value.trim();
+    const output = document.getElementById("output");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    if (!sheetId || !sheetName || !scriptUrl) {
+      output.textContent = "Please fill all fields.";
+      downloadBtn.style.display = "none";
+      return;
+    }
+
+    const url = `${scriptUrl}?sheetId=${encodeURIComponent(sheetId)}&sheetName=${encodeURIComponent(sheetName)}`;
+    output.textContent = "Fetching data...";
+
+    try {
+      const response = await fetch(url);
+      const result = await response.json();
+
+      if (result.error) {
+        output.textContent = "Error: " + result.error;
+        downloadBtn.style.display = "none";
+      } else {
+        latestData = result.data;
+        output.textContent = JSON.stringify(result.data, null, 2);
+        downloadBtn.style.display = "inline-block";
+      }
+    } catch (error) {
+      output.textContent = "Fetch error: " + error.message;
+      downloadBtn.style.display = "none";
+    }
+  }
+
+  function downloadJSON() {
+    if (!latestData) return;
+
+    const varName = document.getElementById("fileNamePrefix").value.trim();
+    if (!varName.match(/^[a-zA-Z_$][a-zA-Z0-9_$]*$/)) {
+      alert("Please enter a valid JavaScript variable name.");
+      return;
+    }
+
+    const fileName = `${varName}.json`;
+    const content = `${varName} = ${JSON.stringify(latestData, null, 2)};`;
+
+    const blob = new Blob([content], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+</script>
+
+</body>
+</html>
