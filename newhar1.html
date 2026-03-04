@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat Explorer</title>
+    <style>
+        :root {
+            --wa-bg: #e5ddd5;
+            --wa-bubble-in: #ffffff;
+            --wa-header: #075e54;
+            --wa-meta: #999;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f0f2f5;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 20px;
+        }
+
+        h2 { font-size: 1.2rem; margin-top: 0; color: var(--wa-header); }
+
+        .filter-group { display: flex; flex-direction: column; gap: 8px; }
+        
+        label { font-weight: bold; font-size: 0.9rem; }
+
+        input, select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Chat Area Styling */
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        header {
+            background-color: var(--wa-header);
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--wa-bg);
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bubble {
+            max-width: 75%;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+            background-color: var(--wa-bubble-in);
+            align-self: flex-start;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .sender-name { font-weight: bold; color: #27ae60; font-size: 0.85em; display: block; }
+        .meta { font-size: 0.7em; color: var(--wa-meta); text-align: right; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<aside id="sidebar">
+    <h2>Filters</h2>
+    
+    <div class="filter-group">
+        <label>1. Upload File</label>
+        <input type="file" id="fileInput" accept=".txt">
+    </div>
+
+    <div class="filter-group">
+        <label>2. Filter by Sender</label>
+        <select id="senderFilter">
+            <option value="all">All Senders</option>
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label>3. Start Date</label>
+        <input type="date" id="startDate">
+    </div>
+
+    <div class="filter-group">
+        <label>4. End Date</label>
+        <input type="date" id="endDate">
+    </div>
+
+    <button id="resetBtn" style="margin-top:10px; padding: 8px; cursor: pointer;">Clear Filters</button>
+</aside>
+
+<div id="main-content">
+    <header>WhatsApp Archive Viewer</header>
+    <div id="chat-container">
+        <div style="text-align: center; color: #666; margin-top: 50px;">
+            Please upload your _chat.txt file to begin.
+        </div>
+    </div>
+</div>
+
+<script>
+    let allMessages = [];
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            parseChat(e.target.result);
+        };
+        reader.readAsText(file);
+    });
+
+    function parseChat(data) {
+        allMessages = [];
+        const senders = new Set();
+        
+        // Regex handles [DD/MM/YYYY, HH:MM:SS] Sender: Message
+        const regex = /\[(\d{2})\/(\d{2})\/(\d{4}),\s(\d{2}:\d{2}:\d{2})\]\s(.*?):\s([\s\S]*?)(?=\n\[\d{2}\/\d{2}\/\d{4}|$)/g;
+        
+        let match;
+        while ((match = regex.exec(data)) !== null) {
+            const [_, day, month, year, time, sender, message] = match;
+            
+            // Create a real Date object for filtering
+            const dateObj = new Date(`${year}-${month}-${day}`);
+            
+            allMessages.push({
+                date: dateObj,
+                dateStr: `${day}/${month}/${year}`,
+                time: time,
+                sender: sender.trim(),
+                message: message.trim()
+            });
+            senders.add(sender.trim());
+        }
+
+        updateSenderDropdown(senders);
+        applyFilters();
+    }
+
+    function updateSenderDropdown(senders) {
+        const select = document.getElementById('senderFilter');
+        select.innerHTML = '<option value="all">All Senders</option>';
+        senders.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            select.appendChild(opt);
+        });
+    }
+
+    function applyFilters() {
+        const selectedSender = document.getElementById('senderFilter').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+
+        const filtered = allMessages.filter(m => {
+            const matchesSender = (selectedSender === 'all' || m.sender === selectedSender);
+            const matchesStart = (!start || m.date >= new Date(start));
+            const matchesEnd = (!end || m.date <= new Date(end));
+            return matchesSender && matchesStart && matchesEnd;
+        });
+
+        renderChat(filtered);
+    }
+
+    function renderChat(messages) {
+        const container = document.getElementById('chat-container');
+        container.innerHTML = '';
+
+        messages.forEach(m => {
+            const div = document.createElement('div');
+            div.className = 'bubble';
+            div.innerHTML = `
+                <span class="sender-name">${m.sender}</span>
+                <div>${m.message}</div>
+                <div class="meta">${m.dateStr} ${m.time}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // Event listeners for real-time filtering
+    document.getElementById('senderFilter').addEventListener('change', applyFilters);
+    document.getElementById('startDate').addEventListener('change', applyFilters);
+    document.getElementById('endDate').addEventListener('change', applyFilters);
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        document.getElementById('senderFilter').value = 'all';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        applyFilters();
+    });
+</script>
+
+</body>
+</html>
