@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chat Archive</title>
+    <style>
+        :root {
+            --wa-bg: #efe7de;
+            --wa-header: #075e54;
+            --wa-bubble: #ffffff;
+            --wa-highlight: #ffeb3b;
+            --wa-active-hl: #ffa000;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; background-color: var(--wa-bg);
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* Header & Search Bar */
+        header {
+            background: var(--wa-header); color: white;
+            padding: 10px 16px; display: flex; align-items: center;
+            z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #search-bar {
+            display: none; background: white; padding: 8px 16px;
+            align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #search-bar input { flex: 1; border: none; outline: none; font-size: 16px; }
+
+        /* Navigation Drawer */
+        #drawer {
+            position: fixed; top: 0; left: -100%; width: 80%; height: 100%;
+            background: white; z-index: 200; transition: 0.3s;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3); padding: 20px; box-sizing: border-box;
+        }
+        #drawer.open { left: 0; }
+        .overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 150;
+        }
+        .overlay.show { display: block; }
+
+        /* Chat Window */
+        #chat-window {
+            flex: 1; overflow-y: auto; padding: 10px;
+            display: flex; flex-direction: column;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+        }
+
+        /* Compact Bubbles */
+        .bubble {
+            max-width: 85%; background: var(--wa-bubble);
+            padding: 6px 10px; margin: 2px 0;
+            border-radius: 8px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.1);
+            line-height: 1.3; white-space: pre-wrap; word-wrap: break-word; font-size: 0.9rem;
+        }
+        .sender { color: #e91e63; font-weight: bold; font-size: 0.75rem; display: block; margin-bottom: 1px; }
+        .timestamp { font-size: 0.65rem; color: #999; text-align: right; margin-top: 2px; display: block; }
+        
+        /* Highlighting */
+        mark { background: var(--wa-highlight); color: black; padding: 0; }
+        mark.current { background: var(--wa-active-hl); }
+
+        .btn { cursor: pointer; background: none; border: none; font-size: 18px; color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<div id="drawer">
+    <h3>Filters</h3>
+    <div style="margin-bottom:15px">
+        <label>Sender</label>
+        <select id="senderFilter" onchange="applyFilters(); toggleMenu();" style="width:100%; padding:8px;">
+            <option value="all">All Participants</option>
+        </select>
+    </div>
+    <div style="margin-bottom:15px">
+        <label>Date Range</label>
+        <input type="date" id="startDate" onchange="applyFilters()" style="width:100%; padding:8px; margin-bottom:5px;">
+        <input type="date" id="endDate" onchange="applyFilters()" style="width:100%; padding:8px;">
+    </div>
+    <button onclick="resetFilters()" style="width:100%; padding:10px; background:#075e54; color:white; border:none; border-radius:5px;">Reset</button>
+</div>
+
+<header id="main-header">
+    <div onclick="toggleMenu()" style="font-size:24px; cursor:pointer;">☰</div>
+    <div style="flex-grow: 1; margin-left: 15px; font-weight: bold;">Chat Archive</div>
+    <div onclick="toggleSearch()" style="font-size:20px; cursor:pointer;">🔍</div>
+</header>
+
+<div id="search-bar">
+    <input type="text" id="searchInput" placeholder="Search messages..." oninput="handleSearch()">
+    <span id="matchCount" style="font-size: 12px; color: #666;">0/0</span>
+    <button class="btn" onclick="navSearch(-1)">▲</button>
+    <button class="btn" onclick="navSearch(1)">▼</button>
+    <button class="btn" onclick="toggleSearch()">✕</button>
+</div>
+
+<div id="chat-window"></div>
+
+<script>
+  //  const FILE_URL = 'https://raw.githubusercontent.com/USERNAME/REPO/main/_chat.txt';
+   const FILE_URL = 'https://raw.githubusercontent.com/gvssmark/HAMSA/main/harichats.txt';
+    let allMessages = [];
+    let searchMatches = [];
+    let currentMatchIndex = -1;
+
+    async function loadChat() {
+        try {
+            const response = await fetch(FILE_URL);
+            const text = await response.text();
+            parseChat(text);
+        } catch (err) { alert("Failed to load chat file."); }
+    }
+
+    function parseChat(data) {
+        allMessages = [];
+        const senders = new Set();
+        const regex = /\[(\d{2})\/(\d{2})\/(\d{4}),\s(\d{2}:\d{2}:\d{2})\]\s(.*?):\s([\s\S]*?)(?=\n\[\d{2}\/\d{2}\/\d{4}|$)/g;
+        
+        let match;
+        while ((match = regex.exec(data)) !== null) {
+            const [_, day, month, year, time, sender, message] = match;
+            allMessages.push({
+                date: new Date(`${year}-${month}-${day}`),
+                dateStr: `${day}/${month}/${year}`,
+                time, sender: sender.trim(), message: message.trim()
+            });
+            senders.add(sender.trim());
+        }
+
+        const select = document.getElementById('senderFilter');
+        senders.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s; opt.textContent = s;
+            select.appendChild(opt);
+        });
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const sender = document.getElementById('senderFilter').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+
+        const filtered = allMessages.filter(m => {
+            return (sender === 'all' || m.sender === sender) &&
+                   (!start || m.date >= new Date(start)) &&
+                   (!end || m.date <= new Date(end));
+        });
+        renderChat(filtered);
+    }
+
+    function renderChat(messages) {
+        const container = document.getElementById('chat-window');
+        container.innerHTML = messages.map((m, i) => `
+            <div class="bubble" id="msg-${i}">
+                <span class="sender">${m.sender}</span>
+                <span class="text">${m.message}</span>
+                <span class="timestamp">${m.dateStr}, ${m.time}</span>
+            </div>
+        `).join('');
+    }
+
+    function toggleSearch() {
+        const bar = document.getElementById('search-bar');
+        const header = document.getElementById('main-header');
+        if (bar.style.display === 'flex') {
+            bar.style.display = 'none';
+            header.style.display = 'flex';
+            clearHighlights();
+        } else {
+            bar.style.display = 'flex';
+            header.style.display = 'none';
+            document.getElementById('searchInput').focus();
+        }
+    }
+
+    function handleSearch() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        clearHighlights();
+        if (!query) return;
+
+        const textNodes = document.querySelectorAll('.bubble .text');
+        searchMatches = [];
+        currentMatchIndex = -1;
+
+        textNodes.forEach((node) => {
+            const text = node.textContent;
+            if (text.toLowerCase().includes(query)) {
+                const regex = new RegExp(`(${query})`, 'gi');
+                node.innerHTML = text.replace(regex, '<mark>$1</mark>');
+                node.querySelectorAll('mark').forEach(m => searchMatches.push(m));
+            }
+        });
+
+        updateMatchCount();
+        if (searchMatches.length > 0) navSearch(1);
+    }
+
+    function navSearch(dir) {
+        if (searchMatches.length === 0) return;
+        if (currentMatchIndex >= 0) searchMatches[currentMatchIndex].classList.remove('current');
+        
+        currentMatchIndex = (currentMatchIndex + dir + searchMatches.length) % searchMatches.length;
+        const active = searchMatches[currentMatchIndex];
+        active.classList.add('current');
+        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        updateMatchCount();
+    }
+
+    function updateMatchCount() {
+        document.getElementById('matchCount').innerText = `${searchMatches.length > 0 ? currentMatchIndex + 1 : 0}/${searchMatches.length}`;
+    }
+
+    function clearHighlights() {
+        document.querySelectorAll('.bubble .text').forEach(node => node.innerHTML = node.textContent);
+        searchMatches = [];
+        updateMatchCount();
+    }
+
+    function toggleMenu() {
+        document.getElementById('drawer').classList.toggle('open');
+        document.getElementById('overlay').classList.toggle('show');
+    }
+
+    function resetFilters() {
+        document.getElementById('senderFilter').value = 'all';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        applyFilters();
+        toggleMenu();
+    }
+
+    window.onload = loadChat;
+</script>
+</body>
+</html>
