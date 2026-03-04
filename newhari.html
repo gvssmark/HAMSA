@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat Viewer</title>
+    <style>
+        :root {
+            --wa-bg: #e5ddd5;
+            --wa-bubble-in: #ffffff;
+            --wa-bubble-out: #dcf8c6;
+            --wa-text: #303030;
+            --wa-meta: #999;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background-color: #075e54;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #controls {
+            padding: 10px;
+            background: #fff;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+        }
+
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-color: var(--wa-bg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bubble {
+            max-width: 70%;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap; /* This preserves new lines */
+        }
+
+        .received {
+            align-self: flex-start;
+            background-color: var(--wa-bubble-in);
+        }
+
+        .sender-name {
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .meta {
+            font-size: 0.7em;
+            color: var(--wa-meta);
+            text-align: right;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<header>WhatsApp Chat Viewer</header>
+
+<div id="controls">
+    <input type="file" id="fileInput" accept=".txt">
+    <p><small>Select your exported _chat.txt file</small></p>
+</div>
+
+<div id="chat-container" id="chat">
+    </div>
+
+<script>
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            parseChat(text);
+        };
+        reader.readAsText(file);
+    });
+
+    function parseChat(data) {
+        const container = document.getElementById('chat-container');
+        container.innerHTML = '';
+
+        // Regex to match [Date, Time] Sender: Message
+        // Matches even if the message spans multiple lines
+        const regex = /\[(\d{2}\/\d{2}\/\d{4}),\s(\d{2}:\d{2}:\d{2})\]\s(.*?):\s([\s\S]*?)(?=\n\[\d{2}\/\d{2}\/\d{4}|$)/g;
+        
+        let match;
+        while ((match = regex.exec(data)) !== null) {
+            const [full, date, time, sender, message] = match;
+            
+            createBubble(container, sender, message.trim(), `${date} ${time}`);
+        }
+    }
+
+    function createBubble(container, sender, message, timestamp) {
+        const div = document.createElement('div');
+        div.className = 'bubble received';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'sender-name';
+        nameSpan.textContent = sender;
+
+        const msgDiv = document.createElement('div');
+        msgDiv.textContent = message;
+
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'meta';
+        metaDiv.textContent = timestamp;
+
+        div.appendChild(nameSpan);
+        div.appendChild(msgDiv);
+        div.appendChild(metaDiv);
+        container.appendChild(div);
+    }
+</script>
+
+</body>
+</html>
