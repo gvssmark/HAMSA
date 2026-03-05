@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#075e54" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link href='https://fonts.googleapis.com/css?family=Mandali' rel='stylesheet'>
+    <title>హరివంశసత్సంగము</title>
+    
+    <script src="https://gvssmark.github.io/HAMSA/hari.json"></script>
+
+    <style>
+        :root {
+            --wa-bg: #efe7de;
+            --wa-header: #075e54;
+            --wa-bubble: #ffffff;
+            --wa-highlight: #ffeb3b;
+            --wa-active-hl: #ffa000;
+        }
+
+        html, body {
+            margin: 0; padding: 0; width: 100%; overflow: hidden;
+            background-color: var(--wa-bg); 
+            height: 100dvh;
+            display: flex; flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .top-container {
+            position: sticky; top: 0; z-index: 2000;
+            display: flex; flex-direction: column; background: var(--wa-header); width: 100%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+
+        header { color: white; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+        .header-title { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #active-filter-label { font-size: 10px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .nav-btn {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(255,255,255,0.2); color: white;
+            display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer; font-size: 18px; flex-shrink: 0;
+        }
+
+        #search-bar {
+            background: #ffffff; border-bottom: 1px solid #ccc;
+            padding: 8px 12px; display: flex; align-items: center; gap: 8px;
+            z-index: 2001;
+        }
+
+        #search-bar input { 
+            flex: 1; border: 1px solid #bbb; border-radius: 20px; 
+            padding: 8px 12px; outline: none; font-size: 16px;
+            background: #f9f9f9; min-width: 0;
+        }
+
+        #drawer {
+            position: fixed; top: 0; left: -100%; width: 280px; height: 100dvh;
+            background: white; z-index: 3000; transition: 0.3s;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3); padding: 20px; box-sizing: border-box;
+        }
+        #drawer.open { left: 0; }
+        .overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 2500;
+        }
+        .overlay.show { display: block; }
+
+        #chat-window {
+            flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 8px;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-attachment: fixed; display: flex; flex-direction: column;
+        }
+
+        .bubble {
+            max-width: 90%; background: var(--wa-bubble);
+            padding: 6px 10px; margin-bottom: 6px;
+            border-radius: 8px; box-shadow: 0 1px 0.5px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; width: fit-content;
+            word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;
+            scroll-margin-top: 130px; 
+        }
+
+        .sender { color: #e91e63; font-weight: bold; font-size: 11px; margin-bottom: 2px; }
+        .text { line-height: 1.4; color: #111; white-space: pre-wrap; font-family: 'Mandali', sans-serif; font-size: 16px; }
+        
+        .timestamp { 
+            font-size: 10px; color: #888; align-self: flex-end; 
+            margin-top: 4px; display: flex; gap: 6px; 
+        }
+        
+        mark { background: var(--wa-highlight); color: black; border-radius: 2px; }
+        mark.current { background: var(--wa-active-hl); outline: 2px solid #8d6e63; }
+        .omitted { font-style: italic; color: #607d8b; }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<div id="drawer">
+    <h3 style="color: var(--wa-header);">Filters</h3>
+    <hr>
+    <label style="font-size: 12px; font-weight: bold;">Sender</label>
+    <select id="senderFilter" onchange="applyFilters(); toggleMenu();" style="width: 100%; margin-bottom:20px; padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></select>
+    
+    <label style="font-size: 12px; font-weight: bold;">Date Range</label>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+        <input type="date" id="startDate" onchange="applyFilters()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+        <input type="date" id="endDate" onchange="applyFilters()" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+    </div>
+    
+    <button onclick="resetFilters()" style="width:100%; background:#075e54; color:white; border:none; padding:12px; border-radius:4px; font-weight:bold; cursor: pointer;">Reset All</button>
+</div>
+
+<div class="top-container">
+    <header>
+        <div onclick="toggleMenu()" style="font-size:24px; cursor:pointer; padding: 5px;">☰</div>
+        <div class="header-title">
+            <span style="font-weight:bold;">హరివంశసత్సంగము</span>
+            <span id="active-filter-label">Loading Data...</span>
+        </div>
+        <button class="nav-btn" onclick="jumpTo('top')">↑</button>
+        <button class="nav-btn" onclick="jumpTo('bottom')">↓</button>
+    </header>
+    <div id="search-bar">
+        <input type="text" id="searchInput" placeholder="Search..." oninput="debounceSearch()">
+        <span id="matchCount" style="font-size: 11px; min-width: 35px; text-align: center;">0/0</span>
+        <button onclick="navSearch(-1)" style="border:none; background:none; font-size:18px; cursor:pointer;">▲</button>
+        <button onclick="navSearch(1)" style="border:none; background:none; font-size:18px; cursor:pointer;">▼</button>
+    </div>
+</div>
+
+<div id="chat-window"></div>
+
+<script>
+    let allMessages = [];
+    let searchMatches = [];
+    let currentMatchIndex = -1;
+    let searchTimeout;
+
+    const ro = new ResizeObserver(() => { window.scrollTo(0, 0); });
+    ro.observe(document.body);
+
+    function checkDataAndInit() {
+        // Variable is now assumed to be 'hari'
+        if (typeof hari !== 'undefined' && Array.isArray(hari)) {
+            processArrayData(hari);
+        } else {
+            // Retry every 500ms in case the external script is slow to load
+            setTimeout(checkDataAndInit, 500);
+        }
+    }
+
+    function processArrayData(dataArray) {
+        allMessages = [];
+        const senders = new Set();
+        let minDate = new Date(8640000000000000);
+        let maxDate = new Date(-8640000000000000);
+
+        allMessages = dataArray.map(item => {
+            const [dateStr, timeStr, sender, message] = item;
+            
+            // Format: DD/MM/YYYY
+            const parts = dateStr.split('/');
+            const dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            
+            if (!isNaN(dateObj)) {
+                if (dateObj < minDate) minDate = dateObj;
+                if (dateObj > maxDate) maxDate = dateObj;
+            }
+            
+            if (sender) senders.add(sender.trim());
+
+            return {
+                date: dateObj,
+                dateStr: dateStr,
+                time: timeStr ? timeStr.substring(0, 5) : "",
+                sender: sender ? sender.trim() : "System",
+                message: message ? message.trim() : ""
+            };
+        });
+
+        // Set Date Picker constraints based on data
+        if (allMessages.length > 0) {
+            const minStr = minDate.toISOString().split('T')[0];
+            const maxStr = maxDate.toISOString().split('T')[0];
+            document.getElementById('startDate').min = minStr;
+            document.getElementById('startDate').max = maxStr;
+            document.getElementById('endDate').min = minStr;
+            document.getElementById('endDate').max = maxStr;
+        }
+
+        // Populate Senders Dropdown
+        const sortedSenders = Array.from(senders).sort((a, b) => a.localeCompare(b));
+        const select = document.getElementById('senderFilter');
+        select.innerHTML = '<option value="all">All Participants</option>';
+        sortedSenders.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s; opt.textContent = s;
+            select.appendChild(opt);
+        });
+
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const sender = document.getElementById('senderFilter').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+
+        const filtered = allMessages.filter(m => {
+            const matchSender = (sender === 'all' || m.sender === sender);
+            const matchStart = (!start || m.date >= new Date(start));
+            const matchEnd = (!end || m.date <= new Date(end));
+            return matchSender && matchStart && matchEnd;
+        });
+
+        document.getElementById('active-filter-label').innerText = 
+            (sender !== 'all' ? `Sender: ${sender}` : 'All Senders') + 
+            (start ? ` | From: ${start}` : '') + (end ? ` | To: ${end}` : '');
+
+        renderChat(filtered);
+        
+    }
+
+    function renderChat(messages) {
+        const container = document.getElementById('chat-window');
+        const fragment = document.createDocumentFragment();
+        
+        messages.forEach((m) => {
+            const div = document.createElement('div');
+            div.className = 'bubble';
+            const isOmitted = m.message.toLowerCase().includes("omitted");
+            
+            div.innerHTML = `
+                <span class="sender">${m.sender}</span>
+                <span class="text ${isOmitted ? 'omitted' : ''}">${m.message}</span>
+                <div class="timestamp">
+                    <span>${m.dateStr}</span>
+                    <span>${m.time}</span>
+                </div>
+            `;
+            fragment.appendChild(div);
+        });
+        
+        container.innerHTML = '';
+        container.appendChild(fragment);
+
+        // This is the line that handles the auto-scroll to top
+        container.scrollTo(0, 0);
+    }
+
+    // --- Search Logic ---
+    function debounceSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(handleSearch, 300);
+    }
+
+    function handleSearch() {
+        const query = document.getElementById('searchInput').value.trim().toLowerCase();
+        clearHighlights();
+        if (!query) return;
+
+        const textElements = document.querySelectorAll('.bubble .text');
+        searchMatches = [];
+        currentMatchIndex = -1;
+
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedQuery})`, 'gi');
+
+        textElements.forEach(el => {
+            if (el.textContent.toLowerCase().includes(query)) {
+                el.innerHTML = el.textContent.replace(regex, '<mark>$1</mark>');
+                el.querySelectorAll('mark').forEach(m => searchMatches.push(m));
+            }
+        });
+        updateMatchCount();
+        if (searchMatches.length > 0) navSearch(1);
+    }
+
+    function navSearch(dir) {
+        if (searchMatches.length === 0) return;
+        if (currentMatchIndex >= 0) searchMatches[currentMatchIndex].classList.remove('current');
+        currentMatchIndex = (currentMatchIndex + dir + searchMatches.length) % searchMatches.length;
+        const active = searchMatches[currentMatchIndex];
+        active.classList.add('current');
+        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        updateMatchCount();
+    }
+
+    function updateMatchCount() {
+        document.getElementById('matchCount').innerText = `${searchMatches.length > 0 ? currentMatchIndex + 1 : 0}/${searchMatches.length}`;
+    }
+
+    function clearHighlights() {
+        document.querySelectorAll('.bubble .text').forEach(node => { node.innerHTML = node.textContent; });
+        searchMatches = [];
+        updateMatchCount();
+    }
+
+    function jumpTo(pos) {
+        const win = document.getElementById('chat-window');
+        win.scrollTo({ top: pos === 'top' ? 0 : win.scrollHeight, behavior: 'smooth' });
+    }
+
+    function toggleMenu() {
+        document.getElementById('drawer').classList.toggle('open');
+        document.getElementById('overlay').classList.toggle('show');
+    }
+
+    function resetFilters() {
+        document.getElementById('senderFilter').value = 'all';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        applyFilters();
+        toggleMenu();
+    }
+
+    window.onload = checkDataAndInit;
+</script>
+</body>
+</html>
