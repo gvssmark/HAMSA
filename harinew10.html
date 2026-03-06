@@ -286,11 +286,20 @@
     }
 
     function resetAll() {
-        document.getElementById('active-filter-display').innerText = "All Messages";
-        hideSearch();
-        renderChat(allMessages);
-        closeOverlays();
+    // Optional: Force a data refresh from the server
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+                registration.update();
+            }
+        });
     }
+    
+    document.getElementById('active-filter-display').innerText = "All Messages";
+    hideSearch();
+    renderChat(allMessages);
+    closeOverlays();
+}
 
     function jumpTo(pos) {
         const win = document.getElementById('chat-window');
