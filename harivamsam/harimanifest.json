@@ -7,7 +7,7 @@
   "theme_color": "#075e54",
   "icons": [
     {
-      "src": "https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png",
+      "src": "h.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
