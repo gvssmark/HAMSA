@@ -3,7 +3,7 @@
   "short_name": "హరివంశ",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#efe7de",
+  "background_color": "red",
   "theme_color": "#075e54",
   "icons": [
     {
