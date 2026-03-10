@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhatsApp Chat Exporter</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; padding: 20px; background: #f0f2f5; max-width: 800px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, button { display: block; width: 100%; margin: 12px 0; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        button { background: #25d366; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #1da851; }
+        #status { color: #2e7d32; font-weight: bold; margin-top: 10px; }
+        #tdata { margin-top: 20px; max-height: 300px; overflow-y: auto; border: 1px solid #ccc; background: #fff; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        td { padding: 8px; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>WhatsApp Chat Cleaner</h2>
+        <input type="file" id="fileInput" accept=".txt" />
+        <label>Export starting from date:</label>
+        <input type="date" id="startDate">
+        <button id="processBtn">Process & Download CSV</button>
+        <p id="status"></p>
+        <div id="tdata"></div>
+    </div>
+
+    <script>
+    const REGEX = /^\[(\d{2})\/(\d{2})\/(\d{4}), \d{2}:\d{2}:\d{2}\]/;
+
+    const clean = (l) => l.replace(/["'*]/g, "").replace(/<This message was edited>/gi, "").replace(/\u200e|\u202f|\u200b/g, "").trim();
+
+    document.getElementById("processBtn").onclick = async () => {
+        const file = document.getElementById("fileInput").files[0];
+        const dateVal = document.getElementById("startDate").value;
+        const status = document.getElementById("status");
+        const container = document.getElementById("tdata");
+
+        if (!file || !dateVal) return alert("Please select a file and a date.");
+
+        status.textContent = "Processing...";
+        const [y, m, d] = dateVal.split("-");
+        const startThreshold = new Date(y, m - 1, d);
+
+        const text = await file.text();
+        // Phase 1: Clean and Filter individual lines
+        const lines = text.split(/\r?\n/).map(clean).filter(l => l !== "");
+
+        let messages = [], current = "", include = false, tableHtml = "<table>";
+
+        // Phase 2: Grouping State Machine
+        for (const line of lines) {
+            const match = line.match(REGEX);
+            if (match) {
+                if (current && include) {
+                    messages.push(current);
+                    tableHtml += `<tr><td>${current}</td></tr>`;
+                }
+                const msgDate = new Date(match[3], match[2] - 1, match[1]);
+                include = msgDate >= startThreshold;
+                current = line;
+            } else {
+                current += " " + line;
+            }
+        }
+
+        // Catch last item
+        if (current && include) {
+            messages.push(current);
+            tableHtml += `<tr><td>${current}</td></tr>`;
+        }
+
+        container.innerHTML = tableHtml + "</table>";
+        
+        if (messages.length > 0) {
+            downloadCSV(messages);
+            status.textContent = `Success! ${messages.length} messages extracted.`;
+        } else {
+            status.textContent = "No messages found for this date.";
+        }
+    };
+
+    function downloadCSV(data) {
+        const blob = new Blob([data.map(r => `"${r.replace(/"/g, '""')}"`).join("\n")], {type: "text/csv"});
+        const a = Object.assign(document.createElement("a"), { 
+            href: URL.createObjectURL(blob), 
+            download: "whatsapp_cleaned.txt" 
+        });
+        a.click();
+    }
+    </script>
+</body>
+</html>
