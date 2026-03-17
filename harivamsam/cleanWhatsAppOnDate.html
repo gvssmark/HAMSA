@@ -13,7 +13,7 @@
         #status { color: #2e7d32; font-weight: bold; margin-top: 10px; }
         #tdata { margin-top: 20px; max-height: 300px; overflow-y: auto; border: 1px solid #ccc; background: #fff; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        td { padding: 8px; border-bottom: 1px solid #eee; }
+        td { padding: 8px; border-bottom: 1px solid red; white-space: pre-wrap; } /* Added pre-wrap to see newlines in preview */
     </style>
 </head>
 <body>
@@ -22,7 +22,7 @@
         <input type="file" id="fileInput" accept=".txt" />
         <label>Export starting from date:</label>
         <input type="date" id="startDate">
-        <button id="processBtn">Process & Download CSV</button>
+        <button id="processBtn">Process & Download</button>
         <p id="status"></p>
         <div id="tdata"></div>
     </div>
@@ -30,7 +30,8 @@
     <script>
     const REGEX = /^\[(\d{2})\/(\d{2})\/(\d{4}), \d{2}:\d{2}:\d{2}\]/;
 
-    const clean = (l) => l.replace(/["'*]/g, "").replace(/<This message was edited>/gi, "").replace(/\u200e|\u202f|\u200b/g, "").trim();
+    // Modified clean function: removed .trim() to preserve leading spaces in multi-line texts
+    const clean = (l) => l.replace(/["'*]/g, "").replace(/<This message was edited>/gi, "").replace(/\u200e|\u202f|\u200b/g, "");
 
     document.getElementById("processBtn").onclick = async () => {
         const file = document.getElementById("fileInput").files[0];
@@ -45,24 +46,30 @@
         const startThreshold = new Date(y, m - 1, d);
 
         const text = await file.text();
-        // Phase 1: Clean and Filter individual lines
-        const lines = text.split(/\r?\n/).map(clean).filter(l => l !== "");
-
+        const rawLines = text.split(/\r?\n/);
+        
         let messages = [], current = "", include = false, tableHtml = "<table>";
 
-        // Phase 2: Grouping State Machine
-        for (const line of lines) {
+        for (let i = 0; i < rawLines.length; i++) {
+            const line = clean(rawLines[i]);
             const match = line.match(REGEX);
+
             if (match) {
+                // Save previous message before starting a new one
                 if (current && include) {
                     messages.push(current);
                     tableHtml += `<tr><td>${current}</td></tr>`;
                 }
+                
                 const msgDate = new Date(match[3], match[2] - 1, match[1]);
                 include = msgDate >= startThreshold;
                 current = line;
             } else {
-                current += " " + line;
+                // Check if it's an empty line or a continuation line
+                if (line.trim() !== "" || current !== "") {
+                    // USE \n INSTEAD OF SPACE TO MAINTAIN MULTI-LINE
+                    current += "\n" + line;
+                }
             }
         }
 
@@ -75,18 +82,20 @@
         container.innerHTML = tableHtml + "</table>";
         
         if (messages.length > 0) {
-            downloadCSV(messages);
+            downloadOutput(messages);
             status.textContent = `Success! ${messages.length} messages extracted.`;
         } else {
             status.textContent = "No messages found for this date.";
         }
     };
 
-    function downloadCSV(data) {
-        const blob = new Blob([data.map(r => `"${r.replace(/"/g, '""')}"`).join("\n")], {type: "text/csv"});
+    function downloadOutput(data) {
+        // Map data: escape internal quotes and wrap in quotes to handle the newlines inside cells
+        const content = data.map(r => `"${r.replace(/"/g, '""')}"`).join("\n");
+        const blob = new Blob([content], {type: "text/plain"});
         const a = Object.assign(document.createElement("a"), { 
             href: URL.createObjectURL(blob), 
-            download: "whatsapp_cleaned.txt" 
+            download: "HarivamsamCleaned.txt" 
         });
         a.click();
     }
