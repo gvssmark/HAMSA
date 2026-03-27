@@ -31,6 +31,11 @@
             --wa-highlight: #ffeb3b;
             --wa-active-hl: #ffa000;
         }
+        
+        .loader {
+width: fit-content;font-size: 40px;font-family: system-ui,sans-serif;font-weight: bold;text-transform: uppercase;color: #0000;-webkit-text-stroke: 1px #000;background: conic-gradient(#000 0 0) 0/0% 100% no-repeat text;animation: l1 1s linear infinite; text-align:centre;}
+.loader:before {  content: "Loading";}
+@keyframes l1 {  to{background-size: 120% 100%}}
 
         html, body {
             margin: 0; padding: 0; width: 100%; overflow: hidden;
@@ -154,7 +159,7 @@
 
 <div id="topic-list" class="filter-overlay"></div>
 <div id="sender-list" class="filter-overlay"></div>
-
+<div class="loader" id='loader'></div>
 <div id="chat-window"></div>
 
 <script>
@@ -175,6 +180,7 @@
        result = await response.json();
    mydata=[...harinew, ...result.data]
    processData(mydata);
+   document.getElementById('loader').style.display='none'
     }
 
     function processData(data) {
