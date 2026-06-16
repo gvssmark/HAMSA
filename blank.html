@@ -1,3 +1,4 @@
+
 <html>
 <head>
   <meta charset="utf-8">
@@ -14,9 +15,15 @@ img {
 }
 .image {width: 100%;text-align: center;}
 b, u {color:red;}
-.coin {  width: 75px; margin-top:-72px; right:5px;  z-index:1000;  height: 75px;  position: fixed;  perspective: 1000px;  animation: flip 4s linear infinite; /* Move animation here */  transform-style: preserve-3d; /* Important for 3D */}
+.coin {  width: 75px;  right:5px;  z-index:1000;  height: 75px;    perspective: 1000px;  animation: flip 4s linear infinite; /* Move animation here */  transform-style: preserve-3d; /* Important for 3D */}
 .coin .side {  position: absolute;  width: 100%;  height: 100%;  backface-visibility: hidden;  /* Remove animation from here */}
 .coin .back {  transform: rotateY(180deg);}
+
+.coins {  width: 75px;  right:5px;  z-index:1000;  height: 75px;    perspective: 1000px;  animation: flip 4s linear infinite; /* Move animation here */  transform-style: preserve-3d; /* Important for 3D */}
+.coins .side {  position: absolute;  width: 100%;  height: 100%;  backface-visibility: hidden;  /* Remove animation from here */}
+.coins .back {  transform: rotateY(180deg);}
+
+
 
 @keyframes flip { 0% { transform: rotateY(0deg); } 
 
@@ -36,13 +43,15 @@ b, u {color:red;}
   <img class="side back" src="https://gvssmark.github.io/ibra/images/ibranewlogo.png">
 </div>
 
-   <div class="coin">
+   <div class="coins">
   <img class="side front" src="https://raw.githubusercontent.com/gvssmark/gvss/main/images/ibapnew.gif">
   <img class="side back" src="https://raw.githubusercontent.com/gvssmark/gvss/main/images/ibapnew.gif">
 </div>
   
 <img src='https://raw.githubusercontent.com/gvssmark/gvss/main/images/ibapnew.gif'>
 <div class="image">
+
+
 <b>GVSS Markandeyulu</b><br>Org Secretary<br>9989036183
 </div>
 
