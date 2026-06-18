@@ -1,4 +1,5 @@
 
+
 <html>
 <head>
   <meta charset="utf-8">
@@ -33,6 +34,7 @@ b, u {color:red;}
 </head>
 <body>
 
+<p>Address Book Updated on  </p><p id='content'>test</p>
 <a href='https://gvssmark.github.io/HAMSA/GoogleSheetsDataDownloader.html'>Google Sheets Data Downloader</a>
 
 <img src='https://raw.githubusercontent.com/gvssmark/ibraec/main/committephotos/30349.jpg'>
@@ -91,6 +93,17 @@ console.log(date.toLocaleString("en-IN", options));
     initReport(updateUI);
 
 <script>
+
+let sheetData;
+fetch('https://docs.google.com/spreadsheets/d/1MaB1PMP3ouY3Es5ziLgY7dhT3ZSb6oHRgecw3JiJfGw/gviz/tq?tqx=out:csv')
+.then(r => r.text())
+.then(csv => {
+    sheetData = csv;   // Store entire CSV
+    console.log(sheetData);
+    document.getElementById('content').innerHTML = sheetData;});
+    
+    
+    
   function updateUI(source) {
       document.getElementById("status").textContent =
         source === "cache" ? "Showing cached data…" : "Updated with fresh data!";
