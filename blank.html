@@ -100,7 +100,8 @@ fetch('https://docs.google.com/spreadsheets/d/1MaB1PMP3ouY3Es5ziLgY7dhT3ZSb6oHRg
 .then(csv => {
     sheetData = csv;   // Store entire CSV
     console.log(sheetData);
-    document.getElementById('content').innerHTML = sheetData;});
+    document.getElementById('content').innerHTML = Number(JSON.parse(sheetData));
+;});
     
     
     
