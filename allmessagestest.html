@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>My First Heading</h1>
+
+<p>My first paragraph.</p>
+
+<script>
+let sheetData;
+fetch('https://docs.google.com/spreadsheets/d/1IuJZto0zCYDAmrQaY8g93Ynl6ev0bxRLb0V3dINi-E8/gviz/tq?tqx=out:csv')
+.then(r => r.text())
+.then(csv => {
+    sheetData = csv;   // Store entire CSV
+    console.log(sheetData);
+    //document.getElementById('content').innerHTML = Number(JSON.parse(sheetData));
+;});
+
+</script>
+</body>
+</html>
