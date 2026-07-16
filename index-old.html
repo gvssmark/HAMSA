@@ -218,27 +218,6 @@
     background:var(--gold); color:#3a2600; border-radius:10px; padding:2px 9px; font-size:11px; flex:none;
   }
 
-  #scrollToggleBtn{
-    position:fixed;
-    right:14px;
-    top:50%;
-    transform:translateY(-50%);
-    width:46px; height:46px;
-    border-radius:50%;
-    border:1px solid rgba(255,255,255,0.35);
-    background:rgba(122,31,43,0.45);
-    color:#fff8ea;
-    font-size:16px;
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer;
-    z-index:30; /* below side menu (51) and popup (60), so it's naturally covered when they're open */
-    backdrop-filter:blur(2px);
-    transition:opacity .15s, background .15s;
-    opacity:0.55;
-  }
-  #scrollToggleBtn:hover, #scrollToggleBtn:active{ opacity:1; background:rgba(122,31,43,0.7); }
-  #scrollToggleBtn.hidden{ display:none; }
-
   @media (min-width:801px){
     #app{ min-height:calc(100vh - 40px); margin-top:20px; margin-bottom:20px; border-radius:14px; }
     #mainHeader{ border-top-left-radius:14px; border-top-right-radius:14px; }
@@ -271,8 +250,6 @@
       <div class="note" id="loadingNote"></div>
     </div>
   </main>
-
-  <button id="scrollToggleBtn" class="hidden" aria-label="Scroll to top">&#9650;</button>
 </div>
 
 <div id="popupOverlay">
@@ -305,7 +282,6 @@
     topicList: document.getElementById('topicList'),
     messages: document.getElementById('messagesContainer'),
     loadingNote: document.getElementById('loadingNote'),
-    scrollToggleBtn: document.getElementById('scrollToggleBtn'),
     popupOverlay: document.getElementById('popupOverlay'),
     popupTitle: document.getElementById('popupTitle'),
     popupSub: document.getElementById('popupSub'),
@@ -402,9 +378,9 @@
   // k1 = the "messages up to this No. are already on GitHub" marker read from the live
   //      Google Sheet at cell [0][10]. When it changes, the maintainer has published a
   //      new chatData0.json, so our cached copy is stale and must be replaced wholesale.
-  // `cached` is passed in (rather than read here) so it can be fetched in parallel with
-  // the live Google Sheet request instead of waiting for it first.
-  async function loadBacklog(k1, cached){
+  async function loadBacklog(k1){
+    const cached = await idbGetBacklog();
+
     if(cached){
       if(k1 === null || cached.syncedUpToMsgNo === k1){
         // Either we can't verify freshness this session (k1 unreadable), or it matches -
@@ -486,17 +462,12 @@
   }
 
   async function fetchSecondSource(url){
-    const t0 = performance.now();
     try{
       const res = await fetch(url, { method:'GET', mode:'cors', redirect:'follow' });
       const text = await res.text();
-      const arr = parseArrayFromText(text);
-      const seconds = ((performance.now() - t0) / 1000).toFixed(2);
-      console.info('[HAMSA] live Google Sheet fetch took', seconds + 's', '(' + text.length + ' chars received)');
-      return arr;
+      return parseArrayFromText(text);
     }catch(e){
-      const seconds = ((performance.now() - t0) / 1000).toFixed(2);
-      console.warn('HAMSA: could not load live Google Sheet source after', seconds + 's.', e);
+      console.warn('HAMSA: could not load live Google Sheet source.', e);
       return null;
     }
   }
@@ -532,15 +503,8 @@
   // ================= Init =================
 
   async function init(){
-    const initT0 = performance.now();
-
-    // 1) Live Google Sheet + IndexedDB cache read, run in parallel - the cache read
-    //    doesn't depend on the live fetch, so there's no reason to wait for one before
-    //    starting the other.
-    const [rawSecond, cached] = await Promise.all([
-      fetchSecondSource(SECOND_SOURCE_URL),
-      idbGetBacklog()
-    ]);
+    // 1) Live Google Sheet: gives us the live delta rows AND the K1 version marker.
+    const rawSecond = await fetchSecondSource(SECOND_SOURCE_URL);
     const k1 = extractK1(rawSecond);
     if(k1 === null){
       els.syncDot.classList.add('warn');
@@ -548,7 +512,7 @@
     }
 
     // 2) Backlog: from IndexedDB if K1 matches what we cached, otherwise re-fetch from GitHub.
-    const { rows: backlogRows, fromCache } = await loadBacklog(k1, cached);
+    const { rows: backlogRows, fromCache } = await loadBacklog(k1);
     console.info('[HAMSA] k1 (live sheet [0][10]) =', k1,
                  '| backlog source =', fromCache ? 'IndexedDB cache' : 'GitHub (freshly downloaded)',
                  '| backlog rows =', backlogRows.length,
@@ -594,9 +558,6 @@
 
     buildSideMenu();
     showRecentPopup();
-
-    const totalSeconds = ((performance.now() - initT0) / 1000).toFixed(2);
-    console.info('[HAMSA] total load time (fetch + merge + render):', totalSeconds + 's');
   }
 
   // ================= Side menu =================
@@ -787,7 +748,6 @@
     els.messages.appendChild(frag);
 
     requestAnimationFrame(() => {
-      updateScrollToggle();
       if(newSinceMsgNo !== null){
         const anchor = document.getElementById('scrollAnchor');
         if(anchor){ anchor.scrollIntoView({behavior:'smooth', block:'start'}); return; }
@@ -808,7 +768,6 @@
 
     if(recentMessages.length === 0){
       els.messages.innerHTML = '<div class="error-box">కొత్త సందేశాలు లేవు. (No new messages.)</div>';
-      updateScrollToggle();
       return;
     }
 
@@ -820,7 +779,6 @@
     roots.forEach(r => frag.appendChild(buildNode(r, 0, null)));
     els.messages.appendChild(frag);
     window.scrollTo({top:0, behavior:'instant'});
-    requestAnimationFrame(updateScrollToggle);
   }
 
   // ================= PWA: service worker + install prompt =================
@@ -846,25 +804,6 @@
     els.installBtn.hidden = true;
   });
   window.addEventListener('appinstalled', () => { els.installBtn.hidden = true; });
-
-  // ================= Scroll-to-top/bottom toggle button =================
-
-  function updateScrollToggle(){
-    const scrollable = document.body.scrollHeight > window.innerHeight + 40;
-    els.scrollToggleBtn.classList.toggle('hidden', !scrollable);
-    if(!scrollable) return;
-    const nearTop = window.scrollY < 80;
-    els.scrollToggleBtn.innerHTML = nearTop ? '&#9660;' : '&#9650;'; // down arrow near top, up arrow otherwise
-    els.scrollToggleBtn.setAttribute('aria-label', nearTop ? 'Scroll to bottom' : 'Scroll to top');
-  }
-
-  els.scrollToggleBtn.addEventListener('click', () => {
-    const nearTop = window.scrollY < 80;
-    window.scrollTo({ top: nearTop ? document.body.scrollHeight : 0, behavior: 'smooth' });
-  });
-
-  window.addEventListener('scroll', updateScrollToggle, { passive: true });
-  window.addEventListener('resize', updateScrollToggle);
 
   // ================= Go =================
   init();
