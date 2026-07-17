@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Printer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mandali&display=swap" rel="stylesheet">
+  <style>
+    :root{
+  --paper:#fcfaf6;
+  --ink:#231a12;
+  --muted:#6f5b49;
+  --border:#d8cdbd;
+  --accent:#8e4b24;
+}
+
+*{box-sizing:border-box}
+
+html, body{
+  margin:0;
+  padding:0;
+}
+
+body{
+  font-family:'Mandali', sans-serif;
+  line-height:1.15;
+  color:var(--ink);
+  background:#efe6d8;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.app{
+  display:grid;
+  grid-template-columns:360px 1fr;
+  gap:24px;
+  padding:24px;
+  max-width:1400px;
+  margin:0 auto;
+}
+
+.panel{
+  background:#fffdf9;
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 8px 24px rgba(0,0,0,.08);
+  height:fit-content;
+  position:sticky;
+  top:24px;
+}
+
+.field{margin-bottom:14px}
+
+label{
+  display:block;
+  font-size:14px;
+  margin-bottom:6px;
+  color:var(--muted);
+}
+
+input, textarea, button{
+  font:inherit;
+}
+
+input, textarea{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 12px;
+  background:#fff;
+}
+
+textarea{
+  min-height:90px;
+  resize:vertical;
+}
+
+button{
+  border:0;
+  border-radius:999px;
+  padding:10px 16px;
+  cursor:pointer;
+  background:var(--accent);
+  color:#fff;
+  margin-right:8px;
+  margin-top:8px;
+}
+
+.book{
+  width:100%;
+  max-width:1100px;
+  margin:0 auto;
+  display:grid;
+  gap:24px;
+}
+
+.page{
+  background:var(--paper);
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:16px;
+  padding:18mm 16mm;
+  box-shadow:0 8px 24px rgba(0,0,0,.08);
+  page-break-after:always;
+  break-after:page;
+  break-inside:avoid;
+  page-break-inside:avoid;
+}
+
+.cover{
+  min-height:277mm;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  background:
+    linear-gradient(180deg, rgba(255,248,240,.96), rgba(245,233,218,.96));
+}
+
+.cover-title{
+  font-size:42px;
+  margin:0;
+  line-height:1.08;
+  color:var(--accent);
+}
+
+.cover-sub{
+  font-size:18px;
+  color:var(--muted);
+  max-width:34ch;
+}
+
+.cover-box{
+  align-self:flex-end;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px;
+  background:#fffaf4;
+  min-width:300px;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid var(--border);
+  padding-bottom:10px;
+  margin-bottom:16px;
+}
+
+.header h2, .header h3{
+  margin:0;
+  font-size:22px;
+}
+
+.small{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.tree{
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+
+.node{
+  margin:0 0 14px 0;
+  padding-left:18px;
+  border-left:1px solid rgba(142,75,36,.28);
+  break-inside:avoid;
+  page-break-inside:avoid;
+}
+
+.card{
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:14px;
+  background:#fff;
+  padding:12px 14px;
+  font-size:15px;
+  break-inside:avoid;
+  page-break-inside:avoid;
+}
+
+.card.root{
+  font-size:16px;
+}
+
+.card.child{
+  font-size:13.5px;
+}
+
+.title{
+  font-size:16px;
+  margin:0 0 8px;
+}
+
+.msg{
+  white-space:pre-wrap;
+  margin:8px 0 0;
+}
+
+.meta{
+  color:var(--muted);
+  margin-bottom:6px;
+}
+
+.tree-list{
+  list-style:none;
+  margin:0;
+  padding:0 0 0 18px;
+}
+
+.tree-message,
+.tree-meaning,
+.tree-bhavam{
+  white-space:pre-wrap;
+}
+
+@page{
+  size:A4;
+  margin:10mm;
+}
+
+@media print{
+  body{
+    background:#fff;
+  }
+
+  .panel{
+    display:none !important;
+  }
+
+  .app{
+    display:block;
+    padding:0;
+  }
+
+  .book{
+    max-width:none;
+    width:100%;
+    gap:0;
+  }
+
+  .page{
+    box-shadow:none;
+    border:none;
+    border-radius:0;
+    padding:16mm 14mm;
+    margin:0;
+    break-after:page;
+    page-break-after:always;
+  }
+
+  .cover{
+    min-height:277mm;
+  }
+
+  .card.root{
+    font-size:16px;
+  }
+
+  .card.child{
+    font-size:12.5px;
+  }
+
+  .node{
+    break-inside:avoid-page;
+    page-break-inside:avoid;
+  }
+}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <div class="field">
+        <label>Data URL</label>
+        <input id="dataUrl" type="url" placeholder="Paste your Apps Script JSON URL here">
+      </div>
+      <div class="field">
+        <label>Title</label>
+        <input id="bookTitle" type="text" placeholder="Book title">
+      </div>
+      <div class="field">
+        <label>Subtitle</label>
+        <input id="bookSubtitle" type="text" placeholder="Subtitle">
+      </div>
+      <div class="field">
+        <label>Prepared by</label>
+        <input id="bookAuthor" type="text" placeholder="Prepared by">
+      </div>
+      <div class="field">
+        <label>Cover note</label>
+        <textarea id="bookIntro" placeholder="Cover note"></textarea>
+      </div>
+      <button id="loadBtn">Load Data</button>
+      <button id="printBtn">Print PDF</button>
+      <button id="sampleBtn">Load Sample</button>
+      <div id="status" class="small" style="margin-top:12px;"></div>
+    </aside>
+
+    <main id="book" class="book"></main>
+  </div>
+
+  <script>
+const expectedHeaders = [
+  'Date','Time','Sender','Asvasam','Poem No','Message',
+  'Message No','Ref No','Ref Sender','Topic1','Meaning','Bhavam','added'
+];
+
+const els = {
+  dataUrl: document.getElementById('dataUrl'),
+  bookTitle: document.getElementById('bookTitle'),
+  bookSubtitle: document.getElementById('bookSubtitle'),
+  bookAuthor: document.getElementById('bookAuthor'),
+  bookIntro: document.getElementById('bookIntro'),
+  loadBtn: document.getElementById('loadBtn'),
+  printBtn: document.getElementById('printBtn'),
+  sampleBtn: document.getElementById('sampleBtn'),
+  status: document.getElementById('status'),
+  book: document.getElementById('book')
+};
+
+let currentRows = [];
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function setStatus(message) {
+  els.status.textContent = message;
+}
+
+function normalizeRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.data)) return payload.data;
+  if (payload && Array.isArray(payload.rows)) return payload.rows;
+  if (payload && Array.isArray(payload.values)) return payload.values;
+  if (payload && Array.isArray(payload.result)) return payload.result;
+  return [];
+}
+
+function parseRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) return [];
+  const headers = rows[0];
+  const body = rows.slice(1);
+
+  return body
+    .filter(r => Array.isArray(r) && r.some(v => String(v ?? '').trim() !== ''))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = r[i] ?? '');
+      return obj;
+    });
+}
+
+function formatDate(value) {
+  const s = String(value || '').trim();
+  if (!s) return '';
+  const d = new Date(s);
+  if (!isNaN(d)) {
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const yyyy = d.getUTCFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return s.replace(/-/g, '/');
+}
+
+function cleanMessage(value) {
+  return String(value ?? '').replace(/\r\n/g, '\n').trim();
+}
+
+function isRootRecord(record) {
+  const asvasam = String(record.Asvasam || '').trim();
+  const poemNo = String(record['Poem No'] || '').trim();
+  return !!(asvasam || poemNo);
+}
+
+function rootLabel(record) {
+  const asvasam = String(record.Asvasam || '').trim();
+  const poemNo = String(record['Poem No'] || '').trim();
+  if (asvasam && poemNo) return `Asvasam: ${asvasam} - Poem No: ${poemNo}`;
+  if (asvasam) return `Asvasam: ${asvasam}`;
+  if (poemNo) return `Poem No: ${poemNo}`;
+  return '';
+}
+
+function buildTree(records) {
+  const items = records.map((record, index) => ({
+    ...record,
+    _id: String(record['Message No'] || `row-${index + 1}`).trim(),
+    _children: [],
+    _index: index
+  }));
+
+  const byId = new Map(items.map(item => [item._id, item]));
+  const roots = [];
+  let currentRoot = null;
+
+  for (const item of items) {
+    if (isRootRecord(item)) {
+      roots.push(item);
+      currentRoot = item;
+      continue;
+    }
+
+    const refNo = String(item['Ref No'] || '').trim();
+    if (refNo && byId.has(refNo) && refNo !== item._id) {
+      byId.get(refNo)._children.push(item);
+    } else if (currentRoot) {
+      currentRoot._children.push(item);
+    } else {
+      roots.push(item);
+    }
+  }
+
+  const sortFn = (a, b) => {
+    const da = `${a.Date || ''} ${a.Time || ''}`.trim();
+    const db = `${b.Date || ''} ${b.Time || ''}`.trim();
+    return da.localeCompare(db) || a._index - b._index;
+  };
+
+  const walk = list => {
+    list.sort(sortFn);
+    list.forEach(node => walk(node._children));
+  };
+
+  walk(roots);
+  return roots;
+}
+
+function renderNode(node, depth = 0) {
+  const isChild = depth > 0;
+  const header = [node.Sender, formatDate(node.Date)].filter(Boolean).join(' - ');
+  const label = rootLabel(node);
+
+  return `
+    <li class="node">
+      <div class="card ${isChild ? 'child' : 'root'}">
+        <div class="meta">${escapeHtml(header)}</div>
+        ${label ? `<div class="small">${escapeHtml(label)}</div>` : ''}
+        <div class="msg">${escapeHtml(cleanMessage(node.Message || ''))}</div>
+        ${node.Meaning ? `<div class="small" style="margin-top:8px;">${escapeHtml(cleanMessage(node.Meaning))}</div>` : ''}
+        ${node.Bhavam ? `<div class="small" style="margin-top:8px;">${escapeHtml(cleanMessage(node.Bhavam))}</div>` : ''}
+        ${node._children && node._children.length ? `<ul class="tree">${node._children.map(child => renderNode(child, depth + 1)).join('')}</ul>` : ''}
+      </div>
+    </li>
+  `;
+}
+
+function renderBook(records) {
+  const roots = buildTree(records);
+
+  const cover = `
+    <section class="page cover">
+      <div>
+        <h1 class="cover-title">${escapeHtml(els.bookTitle.value.trim() || 'Untitled Book')}</h1>
+        ${els.bookSubtitle.value.trim() ? `<div class="cover-sub">${escapeHtml(els.bookSubtitle.value.trim())}</div>` : ''}
+        ${els.bookIntro.value.trim() ? `<div class="cover-sub" style="margin-top:12px;">${escapeHtml(els.bookIntro.value.trim())}</div>` : ''}
+      </div>
+      <div class="cover-box">
+        ${els.bookAuthor.value.trim() ? `<div><strong>Prepared by:</strong> ${escapeHtml(els.bookAuthor.value.trim())}</div>` : ''}
+        <div><strong>Total messages:</strong> ${records.length}</div>
+        <div><strong>Root messages:</strong> ${roots.length}</div>
+      </div>
+    </section>
+  `;
+
+  const treePage = `
+    <section class="page">
+      <div class="header">
+        <div>
+          <h2>Messages</h2>
+          <div class="small">Threaded message tree</div>
+        </div>
+      </div>
+      <ul class="tree">
+        ${roots.length ? roots.map(root => renderNode(root, 0)).join('') : '<li class="small">No threaded data available.</li>'}
+      </ul>
+    </section>
+  `;
+
+  els.book.innerHTML = cover + treePage;
+  currentRows = records;
+  setStatus(`${records.length} rows loaded`);
+}
+
+async function loadFromUrl() {
+  const url = els.dataUrl.value.trim();
+  if (!url) {
+    setStatus('Enter the JSON URL first.');
+    return;
+  }
+
+  setStatus('Loading data...');
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    const rows = normalizeRows(payload);
+    const parsed = parseRows(rows);
+    renderBook(parsed);
+  } catch (err) {
+    console.error(err);
+    setStatus(`Failed to load data: ${err.message}`);
+  }
+}
+
+function loadSample() {
+  const sample = [
+    ["Date","Time","Sender","Asvasam","Poem No","Message","Message No","Ref No","Ref Sender","Topic1","Meaning","Bhavam","added"],
+    ["2025-05-25T18:30:00.000Z","1899-12-30T01:39:29.000Z","Krishnamohan","అవతారిక ",1,"శ్రీగురుభ్యోనమః\nశ్రీ మహాగణాధిపతయేనమః","3958","","","22. ఫిరదౌసి","","",""],
+    ["2025-05-25T18:30:00.000Z","1899-12-30T03:46:49.000Z","Komalarao","","","స్వదేశే పూజ్యతే రాజా I విద్వాన్ స��్వత్ర పుజ్యతే",3985,3974,"Krishnamohan","22. ఫిరదౌసి","","",""],
+    ["2025-05-25T18:30:00.000Z","1899-12-30T03:56:52.000Z","Krishnamohan","ప్రథమాశ్వాసము",1,"చం. మును గజనీమహమ్మదుఁ డభూత పరాక్రమశాలి...","3987","","","22. ఫిరదౌసి","","భావము...",""]
+  ];
+  const parsed = parseRows(sample);
+  renderBook(parsed);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  els.loadBtn.addEventListener('click', loadFromUrl);
+  els.sampleBtn.addEventListener('click', loadSample);
+  els.printBtn.addEventListener('click', () => {
+    if (!currentRows.length) {
+      setStatus('Load data before printing.');
+      return;
+    }
+    window.print();
+  });
+
+  els.book.innerHTML = `
+    <section class="page">
+      <div class="small">Ready. Paste a URL or click Load Sample.</div>
+    </section>
+  `;
+  setStatus('Ready');
+});
+</script>
+</body>
+</html>
