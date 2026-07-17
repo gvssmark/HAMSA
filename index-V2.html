@@ -238,51 +238,8 @@
     transition:opacity .15s, background .15s;
     opacity:0.55;
   }
-  #searchToggleBtn{
-    width:36px;height:36px;border:none;border-radius:8px; background:rgba(255,255,255,0.12); color:#fff8ea;
-    font-size:16px; cursor:pointer; display:flex;align-items:center;justify-content:center; flex:none;
-  }
-  #searchToggleBtn.locked{ opacity:0.35; cursor:not-allowed; }
-
-  #searchOverlay{
-    position:fixed; inset:0; background:rgba(30,15,10,0.55); z-index:65;
-    display:none; flex-direction:column; padding:0;
-  }
-  #searchOverlay.open{ display:flex; }
-  #searchBar{
-    background:var(--paper); display:flex; align-items:center; gap:8px;
-    padding:12px 14px; box-shadow:0 2px 10px rgba(0,0,0,0.15);
-  }
-  #searchInput{
-    flex:1; padding:10px 12px; border:1px solid var(--line); border-radius:9px; font-size:15px;
-    font-family:'Ramabhadra','Poppins',sans-serif;
-  }
-  #searchCloseBtn{
-    width:38px;height:38px;border:none;border-radius:9px; background:var(--maroon); color:#fff8ea;
-    font-size:14px; cursor:pointer; flex:none;
-  }
-  #searchMeta{
-    background:var(--ivory); color:var(--ink-soft); font-size:11.5px; padding:6px 16px;
-    border-bottom:1px solid var(--line);
-  }
-  #searchResultsList{
-    list-style:none; margin:0; padding:0; overflow-y:auto; flex:1; background:var(--paper);
-  }
-  #searchResultsList li{
-    padding:11px 16px; border-bottom:1px solid var(--line); cursor:pointer;
-  }
-  #searchResultsList li:active{ background:#f6efdb; }
-  #searchResultsList .sr-topic{ font-size:10.5px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:.3px; }
-  #searchResultsList .sr-sender{ font-size:12.5px; font-weight:700; color:var(--maroon); margin-left:6px; }
-  #searchResultsList .sr-date{ font-size:10px; color:var(--ink-soft); margin-left:6px; }
-  #searchResultsList .sr-snippet{ font-size:13.5px; margin-top:3px; font-family:'Ramabhadra','Poppins',sans-serif; }
-  #searchResultsList mark{ background:#ffe08a; padding:0 1px; border-radius:2px; }
-
-  .msg-node.flash-highlight{ animation: flashHighlight 1.6s ease; }
-  @keyframes flashHighlight{
-    0%{ box-shadow:0 0 0 3px var(--gold); }
-    100%{ box-shadow:none; }
-  }
+  #scrollToggleBtn:hover, #scrollToggleBtn:active{ opacity:1; background:rgba(122,31,43,0.7); }
+  #scrollToggleBtn.hidden{ display:none; }
 
   @media (min-width:801px){
     #app{ min-height:calc(100vh - 40px); margin-top:20px; margin-bottom:20px; border-radius:14px; }
@@ -297,7 +254,6 @@
   <header id="mainHeader">
     <button id="menuToggle" class="locked" aria-label="Menu">&#9776;</button>
     <div id="headerTitle">HAMSA<small>సందేశ సంచయం</small></div>
-    <button id="searchToggleBtn" class="locked" aria-label="Search messages">&#128269;</button>
     <button id="installBtn" hidden title="Install HAMSA app">&#8681; Install</button>
     <div id="syncDot" title="Data sync status"></div>
   </header>
@@ -329,15 +285,6 @@
   </div>
 </div>
 
-<div id="searchOverlay">
-  <div id="searchBar">
-    <input type="text" id="searchInput" placeholder="Search all messages..." autocomplete="off">
-    <button id="searchCloseBtn" aria-label="Close search">&#10005;</button>
-  </div>
-  <div id="searchMeta"></div>
-  <ul id="searchResultsList"></ul>
-</div>
-
 <script>
 (function(){
   "use strict";
@@ -361,12 +308,6 @@
     messages: document.getElementById('messagesContainer'),
     loadingNote: document.getElementById('loadingNote'),
     scrollToggleBtn: document.getElementById('scrollToggleBtn'),
-    searchToggleBtn: document.getElementById('searchToggleBtn'),
-    searchOverlay: document.getElementById('searchOverlay'),
-    searchInput: document.getElementById('searchInput'),
-    searchCloseBtn: document.getElementById('searchCloseBtn'),
-    searchMeta: document.getElementById('searchMeta'),
-    searchResultsList: document.getElementById('searchResultsList'),
     popupOverlay: document.getElementById('popupOverlay'),
     popupTitle: document.getElementById('popupTitle'),
     popupSub: document.getElementById('popupSub'),
@@ -796,7 +737,6 @@
   function unlockSideMenu(){
     sideMenuUnlocked = true;
     els.menuToggle.classList.remove('locked');
-    els.searchToggleBtn.classList.remove('locked');
   }
   function openSideMenu(){
     if(!sideMenuUnlocked) return;
@@ -808,112 +748,9 @@
     els.sideMenuOverlay.classList.remove('open');
   }
   els.menuToggle.addEventListener('click', () => {
-    closeSearch();
     if(els.sideMenu.classList.contains('open')) closeSideMenu(); else openSideMenu();
   });
   els.sideMenuOverlay.addEventListener('click', closeSideMenu);
-
-  // ================= Search (Ctrl+F / search button) =================
-  // Native browser find only searches whatever topic happens to be rendered right now -
-  // this searches the entire in-memory archive instead, then jumps straight to the match.
-
-  function buildSnippet(text, query){
-    const idx = text.toLowerCase().indexOf(query.toLowerCase());
-    if(idx === -1){
-      return escapeHtml(text.slice(0, 120)) + (text.length > 120 ? '…' : '');
-    }
-    const contextBefore = 40, contextAfter = 70;
-    const start = Math.max(0, idx - contextBefore);
-    const end = Math.min(text.length, idx + query.length + contextAfter);
-    const before = (start > 0 ? '…' : '') + text.slice(start, idx);
-    const match = text.slice(idx, idx + query.length);
-    const after = text.slice(idx + query.length, end) + (end < text.length ? '…' : '');
-    return escapeHtml(before) + '<mark>' + escapeHtml(match) + '</mark>' + escapeHtml(after);
-  }
-
-  function performSearch(rawQuery){
-    const query = rawQuery.trim();
-    els.searchResultsList.innerHTML = '';
-    if(query.length < 2){
-      els.searchMeta.textContent = 'Type at least 2 characters to search.';
-      return;
-    }
-    const qLower = query.toLowerCase();
-    const matches = [];
-    for(let i = 0; i < allMessages.length; i++){
-      const m = allMessages[i];
-      if(m.message.toLowerCase().includes(qLower) || m.sender.toLowerCase().includes(qLower)){
-        matches.push(m);
-        if(matches.length >= 200) break; // cap - plenty for a search result list, keeps render fast
-      }
-    }
-    if(matches.length === 0){
-      els.searchMeta.textContent = 'No matches found.';
-      return;
-    }
-    els.searchMeta.textContent = matches.length + (matches.length >= 200 ? '+' : '') +
-      ' match' + (matches.length === 1 ? '' : 'es') + ' found' +
-      (matches.length >= 200 ? ' (showing first 200)' : '') + '.';
-
-    const frag = document.createDocumentFragment();
-    matches.forEach(m => {
-      const topicLabel = m.topics[0] || '';
-      const li = document.createElement('li');
-      li.innerHTML =
-        '<div><span class="sr-topic">' + escapeHtml(topicLabel) + '</span>' +
-        '<span class="sr-sender">' + escapeHtml(m.sender) + '</span>' +
-        '<span class="sr-date">' + escapeHtml(m.date) + '</span></div>' +
-        '<div class="sr-snippet">' + buildSnippet(m.message, query) + '</div>';
-      li.addEventListener('click', () => {
-        closeSearch();
-        closeSideMenu();
-        renderTopicView(topicLabel, { scrollToMessageNo: m.messageNo });
-        const matchingLi = Array.from(els.topicList.children).find(x => x.textContent.startsWith(topicLabel));
-        if(matchingLi) highlightActiveTopic(matchingLi);
-      });
-      frag.appendChild(li);
-    });
-    els.searchResultsList.appendChild(frag);
-  }
-
-  function openSearch(){
-    if(!sideMenuUnlocked) return;
-    closeSideMenu();
-    els.searchOverlay.classList.add('open');
-    els.searchInput.value = '';
-    els.searchResultsList.innerHTML = '';
-    els.searchMeta.textContent = 'Type at least 2 characters to search.';
-    setTimeout(() => els.searchInput.focus(), 50);
-  }
-  function closeSearch(){
-    els.searchOverlay.classList.remove('open');
-  }
-
-  els.searchToggleBtn.addEventListener('click', openSearch);
-  els.searchCloseBtn.addEventListener('click', closeSearch);
-  els.searchOverlay.addEventListener('click', (e) => { if(e.target === els.searchOverlay) closeSearch(); });
-
-  let searchDebounceTimer = null;
-  els.searchInput.addEventListener('input', () => {
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(() => performSearch(els.searchInput.value), 150);
-  });
-
-  window.addEventListener('keydown', (e) => {
-    const isFindShortcut = (e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F');
-    if(isFindShortcut && sideMenuUnlocked){
-      e.preventDefault();
-      if(els.searchOverlay.classList.contains('open')){
-        els.searchInput.focus();
-      } else {
-        openSearch();
-      }
-      return;
-    }
-    if(e.key === 'Escape' && els.searchOverlay.classList.contains('open')){
-      closeSearch();
-    }
-  });
 
   // ================= Recent popup (Message-No bookmark driven) =================
 
@@ -1060,15 +897,6 @@
 
     requestAnimationFrame(() => {
       updateScrollToggle();
-      if(opts.scrollToMessageNo){
-        const anchorEl = document.getElementById('msg-' + opts.scrollToMessageNo);
-        if(anchorEl){
-          anchorEl.scrollIntoView({behavior:'smooth', block:'center'});
-          anchorEl.classList.add('flash-highlight');
-          setTimeout(() => anchorEl.classList.remove('flash-highlight'), 1700);
-          return;
-        }
-      }
       if(newSinceMsgNo !== null){
         const anchor = document.getElementById('scrollAnchor');
         if(anchor){ anchor.scrollIntoView({behavior:'smooth', block:'start'}); return; }
