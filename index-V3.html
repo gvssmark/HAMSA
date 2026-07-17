@@ -186,7 +186,6 @@
   .depth-1 .msg-body, .depth-2 .msg-body, .depth-3 .msg-body, .depth-4 .msg-body{ font-size:14.5px; }
   .msg-body img{ max-width:100%; height:auto; display:block; border-radius:8px; margin:6px 0; }
   .msg-body iframe{ width:100%; aspect-ratio:16/9; height:auto; border:none; border-radius:8px; margin:6px 0; display:block; }
-  .msg-body mark{ background:#ffe08a; padding:0 1px; border-radius:2px; }
 
   .new-divider{
     display:flex; align-items:center; gap:8px; margin:18px 0 12px; color:var(--maroon);
@@ -818,38 +817,6 @@
   // Native browser find only searches whatever topic happens to be rendered right now -
   // this searches the entire in-memory archive instead, then jumps straight to the match.
 
-  // Highlights matches of `query` inside rendered message text by walking real text nodes
-  // and wrapping matches in <mark> elements - operates purely via DOM APIs (TreeWalker +
-  // createTextNode/replaceChild), never touches innerHTML as a string, so it can't corrupt
-  // the already-sanitized message markup or reintroduce any injection risk.
-  function highlightTextInNode(rootEl, query){
-    const qLower = query.toLowerCase();
-    const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, null);
-    const textNodes = [];
-    let node;
-    while((node = walker.nextNode())) textNodes.push(node);
-
-    textNodes.forEach(textNode => {
-      const text = textNode.nodeValue;
-      const lower = text.toLowerCase();
-      let idx = lower.indexOf(qLower);
-      if(idx === -1) return;
-
-      const frag = document.createDocumentFragment();
-      let cursor = 0;
-      while(idx !== -1){
-        if(idx > cursor) frag.appendChild(document.createTextNode(text.slice(cursor, idx)));
-        const mark = document.createElement('mark');
-        mark.textContent = text.slice(idx, idx + query.length);
-        frag.appendChild(mark);
-        cursor = idx + query.length;
-        idx = lower.indexOf(qLower, cursor);
-      }
-      if(cursor < text.length) frag.appendChild(document.createTextNode(text.slice(cursor)));
-      textNode.parentNode.replaceChild(frag, textNode);
-    });
-  }
-
   function buildSnippet(text, query){
     const idx = text.toLowerCase().indexOf(query.toLowerCase());
     if(idx === -1){
@@ -900,7 +867,7 @@
       li.addEventListener('click', () => {
         closeSearch();
         closeSideMenu();
-        renderTopicView(topicLabel, { scrollToMessageNo: m.messageNo, highlightQuery: query });
+        renderTopicView(topicLabel, { scrollToMessageNo: m.messageNo });
         const matchingLi = Array.from(els.topicList.children).find(x => x.textContent.startsWith(topicLabel));
         if(matchingLi) highlightActiveTopic(matchingLi);
       });
@@ -1099,10 +1066,6 @@
           anchorEl.scrollIntoView({behavior:'smooth', block:'center'});
           anchorEl.classList.add('flash-highlight');
           setTimeout(() => anchorEl.classList.remove('flash-highlight'), 1700);
-          if(opts.highlightQuery){
-            const bodyEl = anchorEl.querySelector('.msg-body');
-            if(bodyEl) highlightTextInNode(bodyEl, opts.highlightQuery);
-          }
           return;
         }
       }
