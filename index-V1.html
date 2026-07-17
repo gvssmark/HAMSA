@@ -184,8 +184,6 @@
     color:var(--ink);
   }
   .depth-1 .msg-body, .depth-2 .msg-body, .depth-3 .msg-body, .depth-4 .msg-body{ font-size:14.5px; }
-  .msg-body img{ max-width:100%; height:auto; display:block; border-radius:8px; margin:6px 0; }
-  .msg-body iframe{ width:100%; aspect-ratio:16/9; height:auto; border:none; border-radius:8px; margin:6px 0; display:block; }
 
   .new-divider{
     display:flex; align-items:center; gap:8px; margin:18px 0 12px; color:var(--maroon);
@@ -438,113 +436,6 @@
   function escapeHtml(str){
     return String(str)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // ---- Message body sanitizer: lets a small whitelist of formatting tags render as real
-  // HTML (e.g. <del>, <span style="color:...">), while safely neutralizing everything else
-  // (script tags, event handler attributes, unknown tags). Uses DOMParser to parse, which
-  // never executes scripts or fires event handlers even for maliciously crafted input -
-  // that's what makes this safe to run on untrusted message text.
-  const SANITIZE_ALLOWED_TAGS = new Set(['B','STRONG','I','EM','U','S','DEL','SPAN','BR','SUB','SUP']);
-  const SANITIZE_DROP_ENTIRELY = new Set(['SCRIPT','STYLE','OBJECT','EMBED','LINK','META','NOSCRIPT']);
-  const SANITIZE_ALLOWED_STYLE_PROPS = new Set(['color','background-color','font-weight','font-style','text-decoration']);
-
-  function isSafeHttpUrl(src){
-    return /^https?:\/\//i.test(String(src || '').trim());
-  }
-
-  // Never trusts the original iframe src as-is - extracts just the YouTube video ID and
-  // rebuilds a clean embed URL from scratch. Anything that isn't a YouTube embed link
-  // (any other site, any malformed URL) is rejected outright.
-  function extractYoutubeEmbedUrl(src){
-    const m = String(src || '').trim().match(/^https?:\/\/(?:www\.)?youtube(?:-nocookie)?\.com\/embed\/([a-zA-Z0-9_-]{6,20})(?:[?&][^"'<>]*)?$/i);
-    if(!m) return null;
-    const origin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null')
-      ? window.location.origin : '';
-    const originParam = origin ? ('?origin=' + encodeURIComponent(origin)) : '';
-    return 'https://www.youtube-nocookie.com/embed/' + m[1] + originParam;
-  }
-
-  function sanitizeStyleAttr(styleText){
-    const out = [];
-    String(styleText).split(';').forEach(decl => {
-      const idx = decl.indexOf(':');
-      if(idx === -1) return;
-      const prop = decl.slice(0, idx).trim().toLowerCase();
-      const val = decl.slice(idx + 1).trim();
-      if(SANITIZE_ALLOWED_STYLE_PROPS.has(prop) && !/url\s*\(|expression\s*\(|javascript:|import|@/i.test(val)){
-        out.push(prop + ':' + val);
-      }
-    });
-    return out.join('; ');
-  }
-
-  function sanitizeWalk(sourceNode, targetParent){
-    Array.from(sourceNode.childNodes).forEach(child => {
-      if(child.nodeType === Node.TEXT_NODE){
-        targetParent.appendChild(document.createTextNode(child.textContent));
-        return;
-      }
-      if(child.nodeType !== Node.ELEMENT_NODE) return; // skip comments etc.
-
-      const tag = child.tagName;
-      if(SANITIZE_DROP_ENTIRELY.has(tag)) return; // drop tag and its content entirely
-
-      if(tag === 'IMG'){
-        const src = child.getAttribute('src') || '';
-        if(!isSafeHttpUrl(src)) return; // reject anything not explicitly http(s) - blocks javascript:/data: tricks
-        const img = document.createElement('img');
-        img.setAttribute('src', src.trim());
-        img.setAttribute('loading', 'lazy');
-        const alt = child.getAttribute('alt');
-        if(alt) img.setAttribute('alt', alt);
-        targetParent.appendChild(img);
-        return; // void element - no children to process
-      }
-
-      if(tag === 'IFRAME'){
-        const embedUrl = extractYoutubeEmbedUrl(child.getAttribute('src'));
-        if(!embedUrl) return; // only ever a freshly-rebuilt YouTube embed URL - everything else is dropped
-        const iframe = document.createElement('iframe');
-        iframe.setAttribute('src', embedUrl);
-        iframe.setAttribute('width', '100%');
-        iframe.setAttribute('height', '220');
-        iframe.setAttribute('frameborder', '0');
-        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
-        iframe.setAttribute('allowfullscreen', '');
-        iframe.setAttribute('loading', 'lazy');
-        // NOTE: no `sandbox` attribute here on purpose. The security concern sandbox would
-        // address (an iframe pointing somewhere dangerous) is already fully covered by
-        // extractYoutubeEmbedUrl only ever allowing a freshly-rebuilt youtube-nocookie.com
-        // embed URL - sandboxing on top of that adds no real protection but does trigger
-        // YouTube's "Error 153: Video player configuration error" for many videos.
-        targetParent.appendChild(iframe);
-        return; // treated as void - never trust/copy original children
-      }
-
-      if(SANITIZE_ALLOWED_TAGS.has(tag)){
-        const clean = document.createElement(tag);
-        if(tag === 'SPAN' && child.hasAttribute('style')){
-          const safeStyle = sanitizeStyleAttr(child.getAttribute('style'));
-          if(safeStyle) clean.setAttribute('style', safeStyle);
-        }
-        targetParent.appendChild(clean);
-        sanitizeWalk(child, clean);
-      } else {
-        // Unknown/disallowed tag - unwrap it: keep its inner content, drop the tag itself.
-        sanitizeWalk(child, targetParent);
-      }
-    });
-  }
-
-  function sanitizeMessageHtml(rawText){
-    const withBreaks = String(rawText).replace(/\n/g, '<br>');
-    const doc = new DOMParser().parseFromString('<div>' + withBreaks + '</div>', 'text/html');
-    const frag = document.createDocumentFragment();
-    sanitizeWalk(doc.body.firstChild, frag);
-    const wrapper = document.createElement('div');
-    wrapper.appendChild(frag);
-    return wrapper.innerHTML;
   }
 
   // Column layout (0-based), matching chatData0.json's header row - the live Google Sheet
@@ -846,7 +737,7 @@
 
     const body = document.createElement('div');
     body.className = 'msg-body';
-    body.innerHTML = sanitizeMessageHtml(msg.message);
+    body.innerHTML = escapeHtml(msg.message).replace(/\n/g, '<br>');
     wrap.appendChild(body);
 
     const kids = (childrenOf.get(msg.messageNo) || []).slice().sort((a,b) => a.messageNo - b.messageNo);
