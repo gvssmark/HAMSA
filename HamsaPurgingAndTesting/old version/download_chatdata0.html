@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAMSA - Download chatData0.json</title>
+<style>
+  :root{
+    --maroon:#7a1f2b; --maroon-dark:#5c1620; --gold:#c9962c;
+    --paper:#fffdf8; --ink:#2b2320; --ink-soft:#6b5f56; --line:#e7ddc9;
+  }
+  body{
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:#e9e2d3; color:var(--ink); margin:0; padding:20px;
+  }
+  #wrap{ max-width:520px; margin:60px auto 0; background:var(--paper); border-radius:14px;
+         box-shadow:0 4px 24px rgba(0,0,0,0.12); overflow:hidden; }
+  header{ background:linear-gradient(135deg,var(--maroon),var(--maroon-dark)); color:#fff8ea; padding:18px 22px; }
+  header h1{ margin:0; font-size:18px; }
+  header p{ margin:4px 0 0; font-size:12px; color:#e9c98f; }
+  main{ padding:22px; }
+  #urlLabel{ font-size:12px; color:var(--ink-soft); word-break:break-all; margin-bottom:16px; }
+  button{
+    border:none; border-radius:9px; padding:12px 20px; font-weight:600; font-size:14px;
+    cursor:pointer; background:var(--maroon); color:#fff8ea; width:100%;
+  }
+  button:disabled{ background:#c8b9a8; cursor:not-allowed; }
+  #status{ font-size:13.5px; margin-top:16px; white-space:pre-wrap; line-height:1.6; }
+  .spinner{
+    width:22px;height:22px;border-radius:50%; display:inline-block; vertical-align:middle; margin-right:8px;
+    border:3px solid var(--line); border-top-color:var(--maroon); animation:spin .9s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  #downloadBtn{ background:var(--gold); color:#3a2600; margin-top:14px; display:none; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <h1>Download current chatData0.json</h1>
+    <p>Fetches the live file from GitHub and saves it locally, ready for the purge tool or as a dated backup.</p>
+  </header>
+  <main>
+    <div id="urlLabel">Source: https://gvssmark.github.io/HAMSA/chatData0.json</div>
+    <button id="fetchBtn">Fetch chatData0.json</button>
+    <div id="status"></div>
+    <button id="downloadBtn">Save file to my computer</button>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const CHATDATA_URL = "https://gvssmark.github.io/HAMSA/chatData0.json";
+
+  const els = {
+    fetchBtn: document.getElementById('fetchBtn'),
+    downloadBtn: document.getElementById('downloadBtn'),
+    status: document.getElementById('status')
+  };
+
+  let fetchedRows = null;
+
+  function loadScriptOnce(url){
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = url;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('script load failed: ' + url));
+      document.body.appendChild(s);
+    });
+  }
+
+  function setStatus(html){ els.status.innerHTML = html; }
+
+  els.fetchBtn.addEventListener('click', async () => {
+    els.fetchBtn.disabled = true;
+    els.downloadBtn.style.display = 'none';
+    setStatus('<span class="spinner"></span>Downloading from GitHub (this file is large, may take a moment)...');
+
+    try{
+      const bustUrl = CHATDATA_URL + '?cb=' + Date.now(); // bypass any stale HTTP/CDN cache
+      const t0 = performance.now();
+      await loadScriptOnce(bustUrl);
+
+      if(typeof window.chatData0 === 'undefined' || !Array.isArray(window.chatData0)){
+        setStatus('Loaded the script, but no valid chatData0 array was found. The file format may have changed.');
+        els.fetchBtn.disabled = false;
+        return;
+      }
+
+      fetchedRows = window.chatData0;
+      try{ delete window.chatData0; }catch(e){ window.chatData0 = undefined; }
+
+      const seconds = ((performance.now() - t0) / 1000).toFixed(1);
+      const dataRowCount = fetchedRows.filter(r => Array.isArray(r) && /^\d{2}\/\d{2}\/\d{4}$/.test(String(r[0]))).length;
+      const lastRow = fetchedRows.length ? fetchedRows[fetchedRows.length - 1] : null;
+      const lastMsgNo = lastRow ? lastRow[5] : 'n/a';
+
+      setStatus(
+        'Fetched successfully in ' + seconds + 's.\n' +
+        'Total rows: ' + fetchedRows.length + ' (' + dataRowCount + ' data rows)\n' +
+        'Last row Message No: ' + lastMsgNo + '\n\n' +
+        'Click below to save it as a local file.'
+      );
+      els.downloadBtn.style.display = 'block';
+    }catch(e){
+      setStatus('Failed to fetch chatData0.json.\n' + e.message + '\n\nCheck your internet connection and try again.');
+    }finally{
+      els.fetchBtn.disabled = false;
+    }
+  });
+
+  els.downloadBtn.addEventListener('click', () => {
+    if(!fetchedRows) return;
+    const text = 'chatData0 = ' + JSON.stringify(fetchedRows) + ';\n';
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const stamp = new Date().toISOString().slice(0,10);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'chatData0_' + stamp + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+})();
+</script>
+</body>
+</html>

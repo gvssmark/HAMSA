@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>HAMSA - Local Data Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ramabhadra&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#7a1f2b; --maroon-dark:#5c1620; --gold:#c9962c;
+    --ivory:#faf6ee; --paper:#fffdf8; --ink:#2b2320; --ink-soft:#6b5f56;
+    --line:#e7ddc9; --new-tint:#fff6de; --blue:#2255aa; --blue-soft:#5b7fb5;
+    --shadow: 0 2px 10px rgba(90,40,20,0.12); --header-h:56px; --subheader-h:42px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:#e9e2d3;}
+  body{ font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased; }
+
+  /* ---------- Loader panel (test-only, not part of the real app) ---------- */
+  #loaderPanel{
+    max-width:800px; margin:16px auto; background:#fff3cd; border:1px solid #e3b34a;
+    border-radius:12px; padding:16px 18px; font-size:13px;
+  }
+  #loaderPanel h2{ margin:0 0 4px; font-size:15px; color:var(--maroon); }
+  #loaderPanel .hint{ font-size:11.5px; color:var(--ink-soft); margin-bottom:10px; }
+  #loaderPanel .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+  #loaderPanel label{ font-size:12.5px; display:flex; align-items:center; gap:6px; }
+  #loaderPanel button{
+    border:none; border-radius:8px; padding:9px 15px; font-weight:600; font-size:12.5px;
+    cursor:pointer; background:var(--maroon); color:#fff8ea;
+  }
+  #loaderPanel button:disabled{ background:#c8b9a8; cursor:not-allowed; }
+  #loaderPanel button.secondary{ background:#8a7a63; }
+  #loaderStatus{ font-size:12.5px; margin-top:8px; white-space:pre-wrap; color:var(--ink-soft); }
+  #loaderStatus.err{ color:#a3282f; font-weight:600; }
+
+  #app{
+    max-width:800px; margin:0 auto; min-height:60vh; background:var(--paper);
+    position:relative; box-shadow:0 0 24px rgba(0,0,0,0.15); display:flex; flex-direction:column;
+    display:none; /* shown once data is loaded */
+  }
+  #app.ready{ display:flex; }
+
+  #mainHeader{
+    position:sticky; top:0; z-index:40; height:var(--header-h);
+    background:linear-gradient(135deg,var(--maroon),var(--maroon-dark)); color:#fff8ea;
+    display:flex; align-items:center; gap:10px; padding:0 14px; box-shadow:var(--shadow);
+  }
+  #menuToggle{
+    width:36px;height:36px;border:none;border-radius:8px; background:rgba(255,255,255,0.12); color:#fff8ea;
+    font-size:20px; line-height:1; cursor:pointer; display:flex;align-items:center;justify-content:center;
+    transition:opacity .2s, transform .15s;
+  }
+  #menuToggle:active{ transform:scale(0.92); }
+  #menuToggle.locked{ opacity:0.35; cursor:not-allowed; }
+  #headerTitle{ font-weight:700; letter-spacing:.5px; font-size:18px; display:flex; flex-direction:column; line-height:1.15; }
+  #headerTitle small{ font-weight:400; font-size:10.5px; color:#e9c98f; letter-spacing:.4px; }
+  #syncDot{
+    margin-left:auto; width:9px;height:9px;border-radius:50%; background:#7fd48a;
+    box-shadow:0 0 0 3px rgba(127,212,138,0.25); flex:none;
+  }
+  #syncDot.warn{ background:#e0a93a; box-shadow:0 0 0 3px rgba(224,169,58,0.25); }
+
+  #subHeader{
+    position:sticky; top:var(--header-h); z-index:35; height:var(--subheader-h);
+    background:var(--gold); color:#3a2600; display:flex; align-items:center; padding:0 14px;
+    font-weight:600; font-size:14.5px; box-shadow:0 2px 6px rgba(150,110,20,0.25);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+
+  #sideMenuOverlay{ position:fixed; inset:0; background:rgba(30,15,10,0.45); z-index:50; display:none; }
+  #sideMenuOverlay.open{ display:block; }
+  #sideMenu{
+    position:fixed; top:0; left:-300px; bottom:0; width:280px; max-width:82vw; background:var(--ivory);
+    z-index:51; box-shadow:2px 0 18px rgba(0,0,0,0.3); transition:left .22s ease; display:flex; flex-direction:column;
+  }
+  #sideMenu.open{ left:0; }
+  #sideMenuHead{ background:var(--maroon); color:#fff8ea; padding:16px 14px; font-weight:700; font-size:15px; }
+  #sideMenuHead span{ display:block; font-weight:400; font-size:11px; color:#e9c98f; margin-top:3px;}
+  #topicList{ list-style:none; margin:0; padding:6px 0; overflow-y:auto; flex:1;}
+  #topicList li{
+    padding:11px 16px; font-size:13.5px; border-bottom:1px solid var(--line);
+    cursor:pointer; display:flex; justify-content:space-between; gap:8px; align-items:center;
+  }
+  #topicList li:active, #topicList li.active{ background:#f1e4c4; }
+  #topicList li .cnt{ background:var(--maroon); color:#fff; border-radius:10px; padding:1px 8px; font-size:10.5px; flex:none; }
+
+  #messagesContainer{ flex:1; padding:14px 12px 40px; background: radial-gradient(circle at 10% 0%, #fdf9ef 0, transparent 60%), var(--paper); }
+  .error-box{ background:#fbe4e4; border:1px solid #e5a9a9; color:#7a2323; padding:14px; border-radius:10px; font-size:13.5px;}
+
+  .msg-node{
+    background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    margin:0 0 10px 0; box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    scroll-margin-top: calc(var(--header-h) + var(--subheader-h) + 12px);
+  }
+  .msg-node.new-msg{ background:var(--new-tint); border-color:#ecd48c; }
+  .msg-node.depth-1, .msg-node.depth-2, .msg-node.depth-3, .msg-node.depth-4{ margin-left:14px; }
+  .msg-children{ margin-top:8px; padding-left:10px; border-left:2px dashed var(--line); }
+  .msg-header{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:5px; }
+  .sender-root{ color:var(--maroon); font-weight:700; font-size:14.5px; }
+  .date-root{ color:var(--ink-soft); font-size:10.5px; }
+  .sender-reply{ color:var(--blue); font-weight:600; font-size:12.5px; }
+  .date-reply{ color:var(--blue-soft); font-size:9.5px; }
+  .msg-body{
+    font-family:'Ramabhadra','Poppins',sans-serif; font-size:15.5px; line-height:1.6;
+    white-space:pre-wrap; word-break:break-word; color:var(--ink);
+  }
+  .depth-1 .msg-body, .depth-2 .msg-body, .depth-3 .msg-body, .depth-4 .msg-body{ font-size:14.5px; }
+
+  .new-divider{ display:flex; align-items:center; gap:8px; margin:18px 0 12px; color:var(--maroon); font-size:11.5px; font-weight:600; }
+  .new-divider::before, .new-divider::after{ content:""; flex:1; height:1px; background:var(--gold); }
+
+  #popupOverlay{ position:fixed; inset:0; background:rgba(30,15,10,0.55); display:none; align-items:center; justify-content:center; z-index:60; padding:18px; }
+  #popupOverlay.open{ display:flex; }
+  #popupBox{
+    background:var(--paper); width:100%; max-width:420px; border-radius:14px; max-height:82vh;
+    display:flex; flex-direction:column; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.35);
+  }
+  #popupBox h2{ margin:0; padding:16px 18px 6px; font-size:16.5px; color:var(--maroon); }
+  #popupBox .sub{ margin:0; padding:0 18px 12px; font-size:12px; color:var(--ink-soft); }
+  #topicSummaryList{ list-style:none; margin:0; padding:4px 10px 14px; overflow-y:auto; }
+  #topicSummaryList li{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:11px 8px; border-bottom:1px solid var(--line); cursor:pointer; font-size:13.5px;
+  }
+  #topicSummaryList li:last-child{ border-bottom:none; }
+  #topicSummaryList li:active{ background:#f6efdb; }
+  #topicSummaryList li.all-row{ font-weight:700; color:var(--maroon); }
+  #topicSummaryList li .cnt{ background:var(--gold); color:#3a2600; border-radius:10px; padding:2px 9px; font-size:11px; flex:none; }
+
+  @media (min-width:801px){
+    #app.ready{ min-height:calc(100vh - 40px); margin-top:20px; margin-bottom:20px; border-radius:14px; }
+    #mainHeader{ border-top-left-radius:14px; border-top-right-radius:14px; }
+    #messagesContainer{ border-bottom-left-radius:14px; border-bottom-right-radius:14px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loaderPanel">
+  <h2>⚠ Local Data Test Harness</h2>
+  <div class="hint">Not the real app - loads a candidate chatData0.json from your computer instead of GitHub, so you can preview it before publishing. Uses a separate test bookmark, so it won't interfere with your real installed app.</div>
+  <div class="row">
+    <input type="file" id="fileInput" accept=".json,.js,application/json,text/javascript">
+  </div>
+  <div class="row">
+    <label><input type="checkbox" id="mergeLiveCheckbox"> Also merge live Google Sheet data</label>
+  </div>
+  <div class="row">
+    <button id="loadBtn" disabled>Load &amp; Render</button>
+    <button class="secondary" id="resetBookmarkBtn">Reset test bookmark (simulate first-time visit)</button>
+  </div>
+  <div id="loaderStatus">No file loaded yet.</div>
+</div>
+
+<div id="app">
+  <header id="mainHeader">
+    <button id="menuToggle" class="locked" aria-label="Menu">&#9776;</button>
+    <div id="headerTitle">HAMSA<small>సందేశ సంచయం (TEST)</small></div>
+    <div id="syncDot" title="Data sync status"></div>
+  </header>
+
+  <div id="subHeader">సందేశాలు లోడ్ అవుతున్నాయి...</div>
+
+  <div id="sideMenuOverlay"></div>
+  <nav id="sideMenu" aria-label="Topics">
+    <div id="sideMenuHead">విషయాలు (Topics)<span>ఒక అంశంపై నొక్కండి</span></div>
+    <ul id="topicList"></ul>
+  </nav>
+
+  <main id="messagesContainer"></main>
+</div>
+
+<div id="popupOverlay">
+  <div id="popupBox">
+    <h2 id="popupTitle">కొత్త సందేశాలు</h2>
+    <p class="sub" id="popupSub">Pick an item to view messages and unlock the topics menu.</p>
+    <ul id="topicSummaryList"></ul>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const SECOND_SOURCE_URL = "https://script.google.com/macros/s/AKfycbxDuDW1plTf8LusgXNHjA-5rflH33T07ahVKbAYmDTuza_A_qZ5Lfb4wFzSWIuktWVd0A/exec";
+  const BOOKMARK_KEY = "hamsa_test_last_seen_msgno_v1"; // separate from the real app's key on purpose
+  const DEFAULT_LOOKBACK_DAYS = 7;
+
+  const els = {
+    fileInput: document.getElementById('fileInput'),
+    mergeLiveCheckbox: document.getElementById('mergeLiveCheckbox'),
+    loadBtn: document.getElementById('loadBtn'),
+    resetBookmarkBtn: document.getElementById('resetBookmarkBtn'),
+    loaderStatus: document.getElementById('loaderStatus'),
+    app: document.getElementById('app'),
+    subHeader: document.getElementById('subHeader'),
+    menuToggle: document.getElementById('menuToggle'),
+    sideMenu: document.getElementById('sideMenu'),
+    sideMenuOverlay: document.getElementById('sideMenuOverlay'),
+    topicList: document.getElementById('topicList'),
+    messages: document.getElementById('messagesContainer'),
+    popupOverlay: document.getElementById('popupOverlay'),
+    popupTitle: document.getElementById('popupTitle'),
+    popupSub: document.getElementById('popupSub'),
+    topicSummaryList: document.getElementById('topicSummaryList'),
+    syncDot: document.getElementById('syncDot')
+  };
+
+  let sideMenuUnlocked = false;
+  let allMessages = [];
+  let byMessageNo = new Map();
+  let childrenOf = new Map();
+  let loadedFileRows = null;
+
+  // ---------- File loading ----------
+
+  function parseArrayFromText(text){
+    if(!text) return null;
+    try{ const j = JSON.parse(text); if(Array.isArray(j)) return j; }catch(e){}
+    const m = text.match(/=\s*(\[[\s\S]*\])\s*;?\s*$/);
+    if(m){
+      try{ const arr = Function('"use strict"; return (' + m[1] + ');')(); if(Array.isArray(arr)) return arr; }catch(e){}
+    }
+    return null;
+  }
+
+  els.fileInput.addEventListener('change', () => {
+    const file = els.fileInput.files[0];
+    if(!file) return;
+    els.loaderStatus.className = '';
+    els.loaderStatus.textContent = 'Reading ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)...';
+    const reader = new FileReader();
+    reader.onload = () => {
+      const arr = parseArrayFromText(reader.result);
+      if(!arr){
+        els.loaderStatus.className = 'err';
+        els.loaderStatus.textContent = 'Could not parse this file as an array.';
+        els.loadBtn.disabled = true;
+        return;
+      }
+      loadedFileRows = arr;
+      const dataCount = arr.filter(isDataRow).length;
+      els.loaderStatus.textContent = 'Loaded ' + arr.length + ' rows (' + dataCount + ' data rows). Ready to render.';
+      els.loadBtn.disabled = false;
+    };
+    reader.onerror = () => {
+      els.loaderStatus.className = 'err';
+      els.loaderStatus.textContent = 'Failed to read file.';
+      els.loadBtn.disabled = true;
+    };
+    reader.readAsText(file);
+  });
+
+  els.resetBookmarkBtn.addEventListener('click', () => {
+    try{ localStorage.removeItem(BOOKMARK_KEY); }catch(e){}
+    els.loaderStatus.className = '';
+    els.loaderStatus.textContent = (loadedFileRows ? 'File still loaded. ' : '') + 'Test bookmark cleared - next Load & Render will behave like a first-time visit.';
+  });
+
+  // ---------- Utilities (identical to the real app) ----------
+
+  function isDataRow(r){ return Array.isArray(r) && /^\d{2}\/\d{2}\/\d{4}$/.test(String(r[0])); }
+
+  function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function normalizeRow(row, sourceName){
+    if(!Array.isArray(row) || row.length < 6) return null;
+    const dateStr = row[0], timeStr = row[1];
+    const dm = String(dateStr || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    const tm = String(timeStr || '').match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+    if(!dm || !tm) return null;
+    const msgNo = parseInt(row[5], 10);
+    if(isNaN(msgNo)) return null;
+    let refNo = row[6];
+    refNo = (refNo === '' || refNo === undefined || refNo === null) ? null : parseInt(refNo, 10);
+    if(refNo !== null && isNaN(refNo)) refNo = null;
+    const dateObj = new Date(+dm[3], (+dm[2]) - 1, +dm[1], +tm[1], +tm[2], +tm[3]);
+    const sender = String(row[2] || '').replace(/~/g, '').trim();
+    const message = String(row[3] || '').trim();
+    let topics = String(row[4] || '').split(',').map(t => t.trim()).filter(Boolean);
+    if(topics.length === 0) topics = ['(వర్గీకరించనిది)'];
+    return { date: dateStr, time: timeStr, dateObj: dateObj, sender: sender, message: message, topics: topics, messageNo: msgNo, refNo: refNo, source: sourceName };
+  }
+
+  async function fetchSecondSource(url){
+    try{
+      const res = await fetch(url, { method:'GET', mode:'cors', redirect:'follow' });
+      const text = await res.text();
+      return parseArrayFromText(text);
+    }catch(e){
+      console.warn('HAMSA TEST: could not load live Google Sheet source.', e);
+      return null;
+    }
+  }
+
+  function extractK1(rawSecond){
+    try{
+      if(rawSecond && Array.isArray(rawSecond[0]) && rawSecond[0][10] !== undefined && rawSecond[0][10] !== ''){
+        const n = parseInt(rawSecond[0][10], 10);
+        return isNaN(n) ? null : n;
+      }
+    }catch(e){}
+    return null;
+  }
+
+  function naturalTopicSort(a, b){
+    const na = parseInt(a, 10), nb = parseInt(b, 10);
+    if(!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+    return a.localeCompare(b, 'te');
+  }
+
+  function getBookmarkMsgNo(){
+    try{ const v = localStorage.getItem(BOOKMARK_KEY); return v !== null ? parseInt(v, 10) : null; }catch(e){ return null; }
+  }
+  function setBookmarkMsgNo(n){
+    try{ localStorage.setItem(BOOKMARK_KEY, String(n)); }catch(e){}
+  }
+
+  // ---------- Load & Render (replaces the real app's GitHub/IndexedDB init) ----------
+
+  els.loadBtn.addEventListener('click', async () => {
+    if(!loadedFileRows) return;
+    els.loadBtn.disabled = true;
+    els.loaderStatus.className = '';
+    els.loaderStatus.textContent = 'Rendering...';
+
+    let rawSecond = null;
+    let k1 = null;
+    if(els.mergeLiveCheckbox.checked){
+      els.loaderStatus.textContent = 'Fetching live Google Sheet data...';
+      rawSecond = await fetchSecondSource(SECOND_SOURCE_URL);
+      k1 = extractK1(rawSecond);
+    }
+
+    if(k1 !== null && loadedFileRows.length){
+      const dataRows = loadedFileRows.filter(isDataRow);
+      const lastRow = dataRows.length ? dataRows[dataRows.length - 1] : null;
+      const fileLastMsgNo = lastRow ? parseInt(lastRow[5], 10) : NaN;
+      if(!isNaN(fileLastMsgNo) && fileLastMsgNo > k1){
+        els.syncDot.classList.add('warn');
+        alert('Sync check: this file contains a Message No (' + fileLastMsgNo + ') higher than the live sheet\'s K1 (' + k1 + '). That shouldn\'t happen - double check this is the file you meant to test.');
+      }
+    }
+
+    const map = new Map();
+    loadedFileRows.forEach(row => { const n = normalizeRow(row, 'file'); if(n) map.set(n.messageNo, n); });
+    if(rawSecond){
+      rawSecond.forEach(row => { const n = normalizeRow(row, 'live'); if(n) map.set(n.messageNo, n); });
+    }
+
+    allMessages = Array.from(map.values()).sort((a,b) => a.messageNo - b.messageNo);
+
+    if(allMessages.length === 0){
+      els.loaderStatus.className = 'err';
+      els.loaderStatus.textContent = 'No valid messages found in this file.';
+      els.loadBtn.disabled = false;
+      return;
+    }
+
+    byMessageNo = new Map(allMessages.map(m => [m.messageNo, m]));
+    childrenOf = new Map();
+    allMessages.forEach(m => {
+      if(m.refNo !== null){
+        if(!childrenOf.has(m.refNo)) childrenOf.set(m.refNo, []);
+        childrenOf.get(m.refNo).push(m);
+      }
+    });
+
+    els.loaderStatus.textContent = 'Rendered ' + allMessages.length + ' messages' + (rawSecond ? ' (file + live merged)' : ' (file only)') + '.';
+    els.loadBtn.disabled = false;
+
+    els.app.classList.add('ready');
+    sideMenuUnlocked = false;
+    els.menuToggle.classList.add('locked');
+    buildSideMenu();
+    showRecentPopup();
+  });
+
+  // ---------- Side menu ----------
+
+  function buildSideMenu(){
+    const topicCounts = new Map();
+    allMessages.forEach(m => m.topics.forEach(t => topicCounts.set(t, (topicCounts.get(t)||0) + 1)));
+    const topics = Array.from(topicCounts.keys()).sort(naturalTopicSort);
+    els.topicList.innerHTML = '';
+    topics.forEach(t => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span>'+escapeHtml(t)+'</span><span class="cnt">'+topicCounts.get(t)+'</span>';
+      li.addEventListener('click', () => {
+        if(!sideMenuUnlocked) return;
+        closeSideMenu();
+        renderTopicView(t, { scrollToLast: true });
+        highlightActiveTopic(li);
+      });
+      els.topicList.appendChild(li);
+    });
+  }
+
+  function highlightActiveTopic(activeLi){
+    Array.from(els.topicList.children).forEach(li => li.classList.remove('active'));
+    activeLi.classList.add('active');
+  }
+
+  function unlockSideMenu(){ sideMenuUnlocked = true; els.menuToggle.classList.remove('locked'); }
+  function openSideMenu(){ if(!sideMenuUnlocked) return; els.sideMenu.classList.add('open'); els.sideMenuOverlay.classList.add('open'); }
+  function closeSideMenu(){ els.sideMenu.classList.remove('open'); els.sideMenuOverlay.classList.remove('open'); }
+  els.menuToggle.addEventListener('click', () => { if(els.sideMenu.classList.contains('open')) closeSideMenu(); else openSideMenu(); });
+  els.sideMenuOverlay.addEventListener('click', closeSideMenu);
+
+  // ---------- Recent popup ----------
+
+  function showRecentPopup(){
+    const maxMsgNo = allMessages[allMessages.length - 1].messageNo;
+    let bookmark = getBookmarkMsgNo();
+    if(bookmark === null){
+      const maxDateObj = allMessages.reduce((mx, m) => m.dateObj > mx ? m.dateObj : mx, allMessages[0].dateObj);
+      const cutoffDate = new Date(maxDateObj);
+      cutoffDate.setDate(cutoffDate.getDate() - DEFAULT_LOOKBACK_DAYS);
+      const windowMsgs = allMessages.filter(m => m.dateObj >= cutoffDate);
+      bookmark = windowMsgs.length ? (Math.min.apply(null, windowMsgs.map(m => m.messageNo)) - 1) : maxMsgNo;
+    }
+    const recent = allMessages.filter(m => m.messageNo > bookmark);
+    els.topicSummaryList.innerHTML = '';
+
+    if(recent.length === 0){
+      els.popupTitle.textContent = 'కొత్త సందేశాలు లేవు';
+      els.popupSub.textContent = 'No new messages since your last visit.';
+      const li = document.createElement('li');
+      li.className = 'all-row';
+      li.innerHTML = '<span>కొనసాగించండి (Continue)</span>';
+      li.addEventListener('click', () => {
+        setBookmarkMsgNo(maxMsgNo);
+        closePopupAndUnlock();
+        renderRecentAllView([]);
+      });
+      els.topicSummaryList.appendChild(li);
+      els.popupOverlay.classList.add('open');
+      els.subHeader.textContent = 'HAMSA';
+      return;
+    }
+
+    els.popupTitle.textContent = 'కొత్త సందేశాలు';
+    els.popupSub.textContent = 'New messages since your last visit — pick an item to view them.';
+
+    const topicCounts = new Map();
+    recent.forEach(m => m.topics.forEach(t => topicCounts.set(t, (topicCounts.get(t)||0) + 1)));
+    const topics = Array.from(topicCounts.keys()).sort(naturalTopicSort);
+
+    const allLi = document.createElement('li');
+    allLi.className = 'all-row';
+    allLi.innerHTML = '<span>అన్ని సందేశాలు (All messages)</span><span class="cnt">'+recent.length+'</span>';
+    allLi.addEventListener('click', () => { setBookmarkMsgNo(maxMsgNo); closePopupAndUnlock(); renderRecentAllView(recent); });
+    els.topicSummaryList.appendChild(allLi);
+
+    topics.forEach(t => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span>'+escapeHtml(t)+'</span><span class="cnt">'+topicCounts.get(t)+'</span>';
+      li.addEventListener('click', () => { setBookmarkMsgNo(maxMsgNo); closePopupAndUnlock(); renderTopicView(t, { scrollToMsgNo: bookmark }); });
+      els.topicSummaryList.appendChild(li);
+    });
+
+    els.popupOverlay.classList.add('open');
+    els.subHeader.textContent = 'కొత్త సందేశాలు (' + recent.length + ')';
+  }
+
+  function closePopupAndUnlock(){ els.popupOverlay.classList.remove('open'); unlockSideMenu(); }
+
+  // ---------- Rendering ----------
+
+  function buildNode(msg, depth, newSinceMsgNo){
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-node depth-' + Math.min(depth, 4) + ((newSinceMsgNo !== null && msg.messageNo > newSinceMsgNo) ? ' new-msg' : '');
+    wrap.id = 'msg-' + msg.messageNo;
+    const senderClass = depth === 0 ? 'sender-root' : 'sender-reply';
+    const dateClass = depth === 0 ? 'date-root' : 'date-reply';
+    const header = document.createElement('div');
+    header.className = 'msg-header';
+    header.innerHTML = '<span class="'+senderClass+'">'+escapeHtml(msg.sender)+'</span><span class="'+dateClass+'">'+msg.date+' • '+msg.time+'</span>';
+    wrap.appendChild(header);
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+    body.innerHTML = escapeHtml(msg.message).replace(/\n/g, '<br>');
+    wrap.appendChild(body);
+    const kids = (childrenOf.get(msg.messageNo) || []).slice().sort((a,b) => a.messageNo - b.messageNo);
+    if(kids.length){
+      const kidsWrap = document.createElement('div');
+      kidsWrap.className = 'msg-children';
+      kids.forEach(k => kidsWrap.appendChild(buildNode(k, depth + 1, newSinceMsgNo)));
+      wrap.appendChild(kidsWrap);
+    }
+    return wrap;
+  }
+
+  function renderTopicView(topicName, opts){
+    opts = opts || {};
+    els.subHeader.textContent = topicName;
+    els.messages.innerHTML = '';
+    const roots = allMessages.filter(m => {
+      if(!m.topics.includes(topicName)) return false;
+      if(m.refNo === null) return true;
+      const parent = byMessageNo.get(m.refNo);
+      return !parent;
+    }).sort((a,b) => a.messageNo - b.messageNo);
+
+    if(roots.length === 0){
+      els.messages.innerHTML = '<div class="error-box">ఈ అంశంలో సందేశాలు కనబడలేదు. (No messages found for this topic.)</div>';
+      return;
+    }
+
+    const newSinceMsgNo = (typeof opts.scrollToMsgNo === 'number') ? opts.scrollToMsgNo : null;
+    const frag = document.createDocumentFragment();
+    let dividerInserted = (newSinceMsgNo === null);
+    roots.forEach(r => {
+      if(!dividerInserted && r.messageNo > newSinceMsgNo){
+        const div = document.createElement('div');
+        div.className = 'new-divider';
+        div.textContent = 'కొత్త సందేశాలు (New since last visit)';
+        div.id = 'scrollAnchor';
+        frag.appendChild(div);
+        dividerInserted = true;
+      }
+      frag.appendChild(buildNode(r, 0, newSinceMsgNo));
+    });
+    els.messages.appendChild(frag);
+
+    requestAnimationFrame(() => {
+      if(newSinceMsgNo !== null){
+        const anchor = document.getElementById('scrollAnchor');
+        if(anchor){ anchor.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+      }
+      if(opts.scrollToLast){
+        const startIdx = Math.max(0, roots.length - 5);
+        const anchorEl = document.getElementById('msg-' + roots[startIdx].messageNo);
+        if(anchorEl){ anchorEl.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+      }
+      window.scrollTo({top:0, behavior:'instant'});
+    });
+  }
+
+  function renderRecentAllView(recentMessages){
+    els.subHeader.textContent = 'కొత్త సందేశాలు (Recent messages)';
+    els.messages.innerHTML = '';
+    if(recentMessages.length === 0){
+      els.messages.innerHTML = '<div class="error-box">కొత్త సందేశాలు లేవు. (No new messages.)</div>';
+      return;
+    }
+    const recentIds = new Set(recentMessages.map(m => m.messageNo));
+    const roots = recentMessages.filter(m => m.refNo === null || !byMessageNo.has(m.refNo) || !recentIds.has(m.refNo)).sort((a,b) => a.messageNo - b.messageNo);
+    const frag = document.createDocumentFragment();
+    roots.forEach(r => frag.appendChild(buildNode(r, 0, null)));
+    els.messages.appendChild(frag);
+    window.scrollTo({top:0, behavior:'instant'});
+  }
+
+})();
+</script>
+</body>
+</html>

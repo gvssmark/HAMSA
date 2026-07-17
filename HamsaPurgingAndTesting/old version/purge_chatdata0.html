@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAMSA - chatData0 Topic Purge Tool</title>
+<style>
+  :root{
+    --maroon:#7a1f2b; --maroon-dark:#5c1620; --gold:#c9962c;
+    --ivory:#faf6ee; --paper:#fffdf8; --ink:#2b2320; --ink-soft:#6b5f56;
+    --line:#e7ddc9; --green:#2f7a3d; --red:#a3282f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:#e9e2d3; color:var(--ink); margin:0; padding:20px;
+  }
+  #wrap{ max-width:760px; margin:0 auto; background:var(--paper); border-radius:14px;
+         box-shadow:0 4px 24px rgba(0,0,0,0.12); overflow:hidden; }
+  header{ background:linear-gradient(135deg,var(--maroon),var(--maroon-dark)); color:#fff8ea;
+          padding:18px 22px; }
+  header h1{ margin:0; font-size:19px; }
+  header p{ margin:4px 0 0; font-size:12.5px; color:#e9c98f; }
+  main{ padding:20px 22px 30px; }
+  .field{ margin-bottom:18px; }
+  .field label{ display:block; font-weight:600; font-size:13.5px; margin-bottom:6px; color:var(--maroon); }
+  .field .hint{ font-size:11.5px; color:var(--ink-soft); margin-top:4px; }
+  input[type=text]{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:14px;
+  }
+  input[type=file]{ font-size:13px; }
+  button{
+    border:none; border-radius:9px; padding:11px 18px; font-weight:600; font-size:13.5px;
+    cursor:pointer; margin-right:10px; margin-top:6px;
+  }
+  #runBtn{ background:var(--maroon); color:#fff8ea; }
+  #runBtn:disabled{ background:#c8b9a8; cursor:not-allowed; }
+  .download-btn{ background:var(--gold); color:#3a2600; }
+  .download-btn:disabled{ background:#e6dcc3; color:#a89a86; cursor:not-allowed; }
+  #status{ font-size:13px; margin-top:10px; white-space:pre-wrap; }
+  #report{ margin-top:22px; display:none; }
+  .stat-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .stat{ background:var(--ivory); border:1px solid var(--line); border-radius:9px; padding:10px 14px; font-size:13px; flex:1; min-width:140px; }
+  .stat b{ display:block; font-size:20px; }
+  .stat.warn{ border-color:#e3b34a; background:#fff6de; }
+  .stat.warn b{ color:var(--red); }
+  .stat.ok b{ color:var(--green); }
+  table{ width:100%; border-collapse:collapse; font-size:12px; margin-top:10px; }
+  th,td{ border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+  th{ background:var(--ivory); }
+  .scroll{ max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; }
+  .section-title{ font-weight:700; color:var(--maroon); font-size:14px; margin:20px 0 6px; }
+  .orphan-box{ background:#fbe4e4; border:1px solid #e5a9a9; color:#7a2323; padding:12px 14px; border-radius:9px; font-size:12.5px; }
+  .meta{ color:var(--ink-soft); font-size:11px; }
+  .orphan-box + .scroll table td{ width:50%; white-space:normal; word-break:break-word; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <h1>chatData0 Topic Purge Tool</h1>
+    <p>Runs entirely in your browser - nothing is uploaded anywhere. Load a file, purge, review, download.</p>
+  </header>
+  <main>
+    <div class="field">
+      <label>1. Load your current chatData0.json</label>
+      <input type="file" id="fileInput" accept=".json,.js,application/json,text/javascript">
+      <div class="hint" id="loadStatus">No file loaded yet.</div>
+    </div>
+
+    <div class="field">
+      <label>2. Topic number(s) to purge</label>
+      <input type="text" id="topicParam" placeholder="e.g. 22,27">
+      <div class="hint">Comma-separated topic numbers, matched against the leading number of each Topics entry (e.g. "22" matches "22. XYZ").</div>
+    </div>
+
+    <button id="runBtn" disabled>Run Purge</button>
+
+    <div id="status"></div>
+
+    <div id="report">
+      <div class="stat-row">
+        <div class="stat"><b id="statTotal">0</b>Total data rows (before)</div>
+        <div class="stat ok"><b id="statKept">0</b>Rows kept</div>
+        <div class="stat"><b id="statRemoved">0</b>Rows fully removed</div>
+        <div class="stat"><b id="statEdited">0</b>Rows edited (multi-topic, stripped)</div>
+      </div>
+
+      <div id="orphanSection"></div>
+
+      <div class="section-title">Preview: removed rows (first 100)</div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Msg No</th><th>Date</th><th>Sender</th><th>Message (first 80 chars)</th><th>Topics (before)</th></tr></thead>
+          <tbody id="removedTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Preview: edited rows - topic stripped, row kept (first 100)</div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Msg No</th><th>Topics before</th><th>Topics after</th></tr></thead>
+          <tbody id="editedTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="section-title">3. Download results</div>
+      <button class="download-btn" id="downloadJsonBtn" disabled>Download chatData0.json (for GitHub)</button>
+      <button class="download-btn" id="downloadCsvBtn" disabled>Download backup-sheet-export.csv (for Google Sheets)</button>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const els = {
+    fileInput: document.getElementById('fileInput'),
+    loadStatus: document.getElementById('loadStatus'),
+    topicParam: document.getElementById('topicParam'),
+    runBtn: document.getElementById('runBtn'),
+    status: document.getElementById('status'),
+    report: document.getElementById('report'),
+    statTotal: document.getElementById('statTotal'),
+    statKept: document.getElementById('statKept'),
+    statRemoved: document.getElementById('statRemoved'),
+    statEdited: document.getElementById('statEdited'),
+    orphanSection: document.getElementById('orphanSection'),
+    removedTableBody: document.getElementById('removedTableBody'),
+    editedTableBody: document.getElementById('editedTableBody'),
+    downloadJsonBtn: document.getElementById('downloadJsonBtn'),
+    downloadCsvBtn: document.getElementById('downloadCsvBtn')
+  };
+
+  let loadedRows = null; // full raw array of arrays, including header
+  let resultKeptRows = null;
+
+  // ---------- Loading chatData0.json (handles both plain JSON and "chatData0 = [...]" JS) ----------
+
+  function parseArrayFromText(text){
+    try{ const j = JSON.parse(text); if(Array.isArray(j)) return j; }catch(e){ /* not plain JSON */ }
+    const m = text.match(/=\s*(\[[\s\S]*\])\s*;?\s*$/);
+    if(m){
+      try{
+        const arr = Function('"use strict"; return (' + m[1] + ');')();
+        if(Array.isArray(arr)) return arr;
+      }catch(e){ /* fallthrough */ }
+    }
+    return null;
+  }
+
+  els.fileInput.addEventListener('change', () => {
+    const file = els.fileInput.files[0];
+    if(!file) return;
+    els.loadStatus.textContent = 'Reading ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)...';
+    const reader = new FileReader();
+    reader.onload = () => {
+      const arr = parseArrayFromText(reader.result);
+      if(!arr){
+        els.loadStatus.textContent = 'Could not parse this file as an array. Expected JSON or "chatData0 = [...]".';
+        els.runBtn.disabled = true;
+        return;
+      }
+      loadedRows = arr;
+      const dataRowCount = arr.filter(r => Array.isArray(r) && /^\d{2}\/\d{2}\/\d{4}$/.test(String(r[0]))).length;
+      els.loadStatus.textContent = 'Loaded ' + arr.length + ' rows (' + dataRowCount + ' data rows). Ready to purge.';
+      els.runBtn.disabled = false;
+    };
+    reader.onerror = () => {
+      els.loadStatus.textContent = 'Failed to read file.';
+      els.runBtn.disabled = true;
+    };
+    reader.readAsText(file);
+  });
+
+  // ---------- Purge logic ----------
+
+  function parseTopics(str){
+    return String(str || '').split(',').map(t => t.trim()).filter(Boolean);
+  }
+  function topicNumber(t){
+    const m = t.match(/^(\d+)/);
+    return m ? m[1] : t;
+  }
+
+  function runPurge(rows, purgeIdsRaw){
+    const purgeSet = new Set(purgeIdsRaw.map(s => s.trim()).filter(Boolean));
+    const removed = [];   // {row, msgNo}
+    const edited = [];    // {msgNo, before, after}
+    const kept = [];
+    const removedMsgNos = new Set();
+
+    rows.forEach(row => {
+      if(!Array.isArray(row) || !/^\d{2}\/\d{2}\/\d{4}$/.test(String(row[0]))){
+        kept.push(row); // header / malformed row - pass through unchanged
+        return;
+      }
+      const topicsBefore = parseTopics(row[4]);
+      const nums = topicsBefore.map(topicNumber);
+      const remaining = topicsBefore.filter((t, i) => !purgeSet.has(nums[i]));
+
+      if(remaining.length === 0 && topicsBefore.length > 0){
+        removed.push({ row, msgNo: row[5] });
+        if(row[5] !== '' && row[5] !== undefined && row[5] !== null){
+          removedMsgNos.add(String(parseInt(row[5], 10)));
+        }
+        return; // drop from output
+      }
+      if(remaining.length !== topicsBefore.length){
+        const newRow = row.slice();
+        newRow[4] = remaining.join(', ');
+        edited.push({ msgNo: row[5], before: row[4], after: newRow[4] });
+        kept.push(newRow);
+        return;
+      }
+      kept.push(row);
+    });
+
+    // Orphan RefNo check across the kept set - capture full context for both sides for review
+    const removedByMsgNo = new Map();
+    removed.forEach(r => {
+      if(r.row[5] !== '' && r.row[5] !== undefined) removedByMsgNo.set(String(parseInt(r.row[5], 10)), r.row);
+    });
+
+    const orphans = [];
+    kept.forEach(row => {
+      if(!Array.isArray(row) || !/^\d{2}\/\d{2}\/\d{4}$/.test(String(row[0]))) return;
+      const ref = row[6];
+      if(ref === '' || ref === undefined || ref === null) return;
+      const refNo = parseInt(ref, 10);
+      if(!isNaN(refNo) && removedMsgNos.has(String(refNo))){
+        orphans.push({
+          child: row,
+          parent: removedByMsgNo.get(String(refNo)) || null,
+          refNo: refNo
+        });
+      }
+    });
+
+    return { kept, removed, edited, orphans };
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  els.runBtn.addEventListener('click', () => {
+    if(!loadedRows){ return; }
+    const params = els.topicParam.value.split(',').map(s => s.trim()).filter(Boolean);
+    if(params.length === 0){
+      els.status.textContent = 'Enter at least one topic number to purge.';
+      return;
+    }
+
+    const result = runPurge(loadedRows, params);
+    resultKeptRows = result.kept;
+
+    const totalDataRows = result.kept.length + result.removed.length
+      - result.kept.filter((r,i) => false).length; // (kept already includes header, count separately below)
+    const dataRowsBefore = loadedRows.filter(r => Array.isArray(r) && /^\d{2}\/\d{2}\/\d{4}$/.test(String(r[0]))).length;
+    const dataRowsKept = result.kept.filter(r => Array.isArray(r) && /^\d{2}\/\d{2}\/\d{4}$/.test(String(r[0]))).length;
+
+    els.statTotal.textContent = dataRowsBefore;
+    els.statKept.textContent = dataRowsKept;
+    els.statRemoved.textContent = result.removed.length;
+    els.statEdited.textContent = result.edited.length;
+
+    // Orphan warning section
+    if(result.orphans.length > 0){
+      const rowsHtml = result.orphans.map(o => {
+        const parent = o.parent;
+        const child = o.child;
+        const parentMsg = parent ? escapeHtml(String(parent[3]||'').slice(0,100).replace(/\n/g,' ')) : '(not found)';
+        const parentMeta = parent ? escapeHtml(parent[0]) + ' • ' + escapeHtml(parent[2]) + ' • topics: ' + escapeHtml(parent[4]) : '';
+        const childMsg = escapeHtml(String(child[3]||'').slice(0,100).replace(/\n/g,' '));
+        const childMeta = escapeHtml(child[0]) + ' • ' + escapeHtml(child[2]) + ' • topics: ' + escapeHtml(child[4]);
+        return '<tr>' +
+          '<td><b>#' + escapeHtml(o.refNo) + '</b> (removed)<br><span class="meta">' + parentMeta + '</span><br>' + parentMsg + '</td>' +
+          '<td><b>#' + escapeHtml(child[5]) + '</b> (kept, replies to #' + escapeHtml(o.refNo) + ')<br><span class="meta">' + childMeta + '</span><br>' + childMsg + '</td>' +
+          '</tr>';
+      }).join('');
+      els.orphanSection.innerHTML =
+        '<div class="orphan-box"><b>⚠ ' + result.orphans.length + ' orphaned RefNo found.</b> ' +
+        'Each row below: the removed parent message (left) and the kept reply that pointed to it (right). ' +
+        'Decide per pair: re-tag the parent to keep it, re-tag the child to also purge it, or accept as a standalone message.</div>' +
+        '<div class="scroll" style="margin-top:8px;"><table><thead><tr><th>Removed parent</th><th>Kept child (orphaned reply)</th></tr></thead><tbody>' +
+        rowsHtml + '</tbody></table></div>';
+    } else {
+      els.orphanSection.innerHTML = '<div class="stat ok" style="max-width:320px;"><b>0</b>Orphaned RefNo - safe to publish</div>';
+    }
+
+    // Removed rows preview
+    els.removedTableBody.innerHTML = result.removed.slice(0, 100).map(r => {
+      const row = r.row;
+      const msg = String(row[3] || '').slice(0, 80).replace(/\n/g, ' ');
+      return '<tr><td>' + escapeHtml(row[5]) + '</td><td>' + escapeHtml(row[0]) + '</td><td>' +
+        escapeHtml(row[2]) + '</td><td>' + escapeHtml(msg) + '</td><td>' + escapeHtml(row[4]) + '</td></tr>';
+    }).join('');
+
+    // Edited rows preview
+    els.editedTableBody.innerHTML = result.edited.slice(0, 100).map(e =>
+      '<tr><td>' + escapeHtml(e.msgNo) + '</td><td>' + escapeHtml(e.before) + '</td><td>' + escapeHtml(e.after) + '</td></tr>'
+    ).join('');
+
+    els.status.textContent = 'Purge complete (in-browser only, nothing uploaded). Review the report below before downloading.';
+    els.report.style.display = 'block';
+    els.downloadJsonBtn.disabled = false;
+    els.downloadCsvBtn.disabled = false;
+  });
+
+  // ---------- Downloads ----------
+
+  function downloadBlob(content, filename, mime){
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  els.downloadJsonBtn.addEventListener('click', () => {
+    if(!resultKeptRows) return;
+    const text = 'chatData0 = ' + JSON.stringify(resultKeptRows) + ';\n';
+    downloadBlob(text, 'chatData0.json', 'application/json');
+  });
+
+  function csvField(v){
+    const s = (v === undefined || v === null) ? '' : String(v);
+    if(/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  els.downloadCsvBtn.addEventListener('click', () => {
+    if(!resultKeptRows) return;
+    const csv = resultKeptRows.map(row =>
+      (Array.isArray(row) ? row : [row]).map(csvField).join(',')
+    ).join('\r\n');
+    downloadBlob(csv, 'backup-sheet-export.csv', 'text/csv');
+  });
+
+})();
+</script>
+</body>
+</html>

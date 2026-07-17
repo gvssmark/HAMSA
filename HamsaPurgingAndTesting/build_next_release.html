@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAMSA - Build Next Release</title>
+<style>
+  :root{
+    --maroon:#7a1f2b; --maroon-dark:#5c1620; --gold:#c9962c;
+    --ivory:#faf6ee; --paper:#fffdf8; --ink:#2b2320; --ink-soft:#6b5f56;
+    --line:#e7ddc9; --green:#2f7a3d; --red:#a3282f;
+  }
+  *{box-sizing:border-box;}
+  body{ font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#e9e2d3; color:var(--ink); margin:0; padding:20px; }
+  #wrap{ max-width:820px; margin:0 auto; background:var(--paper); border-radius:14px; box-shadow:0 4px 24px rgba(0,0,0,0.12); overflow:hidden; }
+  header{ background:linear-gradient(135deg,var(--maroon),var(--maroon-dark)); color:#fff8ea; padding:18px 22px; }
+  header h1{ margin:0; font-size:19px; }
+  header p{ margin:4px 0 0; font-size:12.5px; color:#e9c98f; }
+  main{ padding:20px 22px 34px; }
+  .step{ border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:16px; background:var(--ivory); }
+  .step h2{ margin:0 0 4px; font-size:14.5px; color:var(--maroon); }
+  .step .hint{ font-size:11.5px; color:var(--ink-soft); margin-bottom:10px; }
+  input[type=text]{ width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
+  label{ display:block; font-weight:600; font-size:12.5px; margin-bottom:5px; }
+  .field{ margin-bottom:12px; }
+  .checkbox-row{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .checkbox-row input{ width:auto; }
+  .checkbox-row label{ margin:0; font-size:13.5px; }
+  #purgeFields{ display:none; padding-top:4px; border-top:1px dashed var(--line); margin-top:4px; }
+  button{ border:none; border-radius:9px; padding:10px 16px; font-weight:600; font-size:13px; cursor:pointer; margin-right:8px; margin-top:6px; }
+  .btn-primary{ background:var(--maroon); color:#fff8ea; }
+  .btn-primary:disabled{ background:#c8b9a8; cursor:not-allowed; }
+  .btn-gold{ background:var(--gold); color:#3a2600; }
+  .btn-gold:disabled{ background:#e6dcc3; color:#a89a86; cursor:not-allowed; }
+  #status1, #status2, #status3{ font-size:13px; margin-top:8px; white-space:pre-wrap; line-height:1.55; }
+  .error-text{ color:var(--red); font-weight:600; }
+  .spinner{ width:16px;height:16px;border-radius:50%; display:inline-block; vertical-align:middle; margin-right:7px;
+            border:2.5px solid var(--line); border-top-color:var(--maroon); animation:spin .9s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .stat-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .stat{ background:#fff; border:1px solid var(--line); border-radius:9px; padding:9px 13px; font-size:12.5px; flex:1; min-width:130px; }
+  .stat b{ display:block; font-size:19px; }
+  .stat.ok b{ color:var(--green); }
+  .stat.warn{ border-color:#e3b34a; background:#fff6de; }
+  .stat.warn b{ color:var(--red); }
+  .orphan-box{ background:#fbe4e4; border:1px solid #e5a9a9; color:#7a2323; padding:12px 14px; border-radius:9px; font-size:12.5px; }
+  .section-title{ font-weight:700; color:var(--maroon); font-size:14px; margin:18px 0 6px; }
+  .scroll{ max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; margin-top:8px; }
+  table{ width:100%; border-collapse:collapse; font-size:12px; }
+  th,td{ border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; word-break:break-word; }
+  th{ background:#fff; position:sticky; top:0; }
+  .meta{ color:var(--ink-soft); font-size:11px; }
+  .k1-callout{ background:#fff6de; border:1px solid #e3b34a; border-radius:9px; padding:12px 14px; font-size:13px; margin-top:16px; }
+  .k1-callout b{ color:var(--maroon); font-size:16px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <h1>Build Next chatData0.json Release</h1>
+    <p>Fetches GitHub + the live Google Sheet, combines up to a cutoff, optionally purges retired topics with a full review, then downloads. Nothing is uploaded anywhere from here.</p>
+  </header>
+  <main>
+
+    <div class="step">
+      <h2>Step 1 - Fetch current chatData0.json from GitHub</h2>
+      <div class="hint">Source: https://gvssmark.github.io/HAMSA/chatData0.json</div>
+      <button class="btn-primary" id="fetchGithubBtn">Fetch from GitHub</button>
+      <div id="status1"></div>
+    </div>
+
+    <div class="step">
+      <h2>Step 2 - Fetch live data from Google Sheet</h2>
+      <div class="hint">Reads the live Apps Script endpoint.</div>
+      <button class="btn-primary" id="fetchLiveBtn">Fetch from Google Sheet</button>
+      <div id="status2"></div>
+    </div>
+
+    <div class="step">
+      <h2>Step 3 - Combine, purge (optional), and preview</h2>
+
+      <div class="field">
+        <label>Include live messages up to Message No (cutoff)</label>
+        <input type="text" id="cutoffInput" placeholder="e.g. 19964">
+        <div class="hint">Live rows above this are left out - they'll be part of a future release instead.</div>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="purgeToggle">
+        <label for="purgeToggle">Also purge retired topics in this release</label>
+      </div>
+
+      <div id="purgeFields">
+        <div class="field">
+          <label>Topic number(s) to purge</label>
+          <input type="text" id="topicInput" placeholder="e.g. 22,27">
+        </div>
+        <div class="field">
+          <label>Purge scope: only apply to messages up to Message No</label>
+          <input type="text" id="purgeCutoffInput" placeholder="e.g. 18583">
+          <div class="hint">Must be less than the combined data's max Message No. Anything above this is left untouched, even if it matches the topic - useful if a "retired" topic still has recent activity you want to keep visible.</div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="previewBtn" disabled>Preview</button>
+      <div id="status3"></div>
+    </div>
+
+    <div id="report" style="display:none;">
+      <div class="section-title">Combine summary</div>
+      <div class="stat-row">
+        <div class="stat"><b id="statGithub">0</b>From GitHub backlog</div>
+        <div class="stat"><b id="statLiveIncluded">0</b>From live (≤ cutoff)</div>
+        <div class="stat"><b id="statLiveExcluded">0</b>Live rows excluded (> cutoff)</div>
+        <div class="stat"><b id="statOverlap">0</b>Overlapping Message No (live replaced GitHub)</div>
+      </div>
+
+      <div id="purgeReportSection" style="display:none;">
+        <div class="section-title">Purge summary</div>
+        <div class="stat-row">
+          <div class="stat"><b id="statPurgeScope">0</b>Data rows in purge scope</div>
+          <div class="stat"><b id="statPurgeRemoved">0</b>Rows fully removed</div>
+          <div class="stat"><b id="statPurgeEdited">0</b>Rows edited (multi-topic stripped)</div>
+        </div>
+
+        <div id="orphanSection"></div>
+
+        <div class="section-title">Preview: removed rows (first 100)</div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Msg No</th><th>Date</th><th>Sender</th><th>Message (first 80 chars)</th><th>Topics (before)</th></tr></thead>
+            <tbody id="removedTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="section-title">Preview: edited rows - topic stripped, row kept (first 100)</div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Msg No</th><th>Topics before</th><th>Topics after</th></tr></thead>
+            <tbody id="editedTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="stat-row" style="margin-top:16px;">
+        <div class="stat ok"><b id="statFinal">0</b>Final combined rows in chatData0.json</div>
+      </div>
+
+      <div class="k1-callout">
+        Set the Live sheet's checkpoint (K1 / J1) to <b id="k1Value">-</b> once this file is published to GitHub.
+        Use the cutoff value from Step 3, not "whatever the last row's Message No happens to be" - purging can make those differ.
+      </div>
+
+      <div class="section-title">Step 4 - Confirm and download</div>
+      <button class="btn-gold" id="downloadJsonBtn">Download chatData0.json (for GitHub)</button>
+      <button class="btn-gold" id="downloadCsvBtn">Download backup-sheet-export.csv (for Google Sheets)</button>
+      <button class="btn-gold" id="downloadRetiredBtn" style="display:none;">Download retired-records archive (original format)</button>
+    </div>
+
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const CHATDATA_URL = "https://gvssmark.github.io/HAMSA/chatData0.json";
+  const SECOND_SOURCE_URL = "https://script.google.com/macros/s/AKfycbxDuDW1plTf8LusgXNHjA-5rflH33T07ahVKbAYmDTuza_A_qZ5Lfb4wFzSWIuktWVd0A/exec";
+
+  const els = {};
+  ['fetchGithubBtn','fetchLiveBtn','status1','status2','status3','cutoffInput','purgeToggle','purgeFields',
+   'topicInput','purgeCutoffInput','previewBtn','report','statGithub','statLiveIncluded','statLiveExcluded',
+   'statOverlap','statFinal','purgeReportSection','statPurgeScope','statPurgeRemoved','statPurgeEdited',
+   'orphanSection','removedTableBody','editedTableBody','k1Value','downloadJsonBtn','downloadCsvBtn','downloadRetiredBtn'
+  ].forEach(id => { els[id] = document.getElementById(id); });
+
+  let githubRows = null;
+  let liveRows = null;
+  let finalRows = null;
+  let retiredRows = null;
+  let headerRowsCache = null;
+
+  function isDataRow(r){ return Array.isArray(r) && /^\d{2}\/\d{2}\/\d{4}$/.test(String(r[0])); }
+  function validMsgNo(r){ const n = parseInt(r[5], 10); return isNaN(n) ? null : n; }
+  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  els.purgeToggle.addEventListener('change', () => {
+    els.purgeFields.style.display = els.purgeToggle.checked ? 'block' : 'none';
+  });
+
+  // ---------- Step 1: GitHub fetch (script-tag technique, same as the app) ----------
+
+  function loadScriptOnce(url){
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = url;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('script load failed: ' + url));
+      document.body.appendChild(s);
+    });
+  }
+
+  els.fetchGithubBtn.addEventListener('click', async () => {
+    els.fetchGithubBtn.disabled = true;
+    els.status1.innerHTML = '<span class="spinner"></span>Downloading from GitHub...';
+    try{
+      const bustUrl = CHATDATA_URL + '?cb=' + Date.now();
+      await loadScriptOnce(bustUrl);
+      if(typeof window.chatData0 === 'undefined' || !Array.isArray(window.chatData0)){
+        els.status1.textContent = 'Loaded, but no valid chatData0 array was found.';
+        els.fetchGithubBtn.disabled = false;
+        return;
+      }
+      githubRows = window.chatData0;
+      try{ delete window.chatData0; }catch(e){ window.chatData0 = undefined; }
+      const dataCount = githubRows.filter(isDataRow).length;
+      els.status1.textContent = 'Loaded ' + githubRows.length + ' rows (' + dataCount + ' data rows).';
+      checkReady();
+    }catch(e){
+      els.status1.textContent = 'Failed: ' + e.message;
+    }finally{
+      els.fetchGithubBtn.disabled = false;
+    }
+  });
+
+  // ---------- Step 2: live Google Sheet fetch ----------
+
+  function parseArrayFromText(text){
+    try{ const j = JSON.parse(text); if(Array.isArray(j)) return j; }catch(e){}
+    const m = text.match(/=\s*(\[[\s\S]*\])\s*;?\s*$/);
+    if(m){
+      try{ const arr = Function('"use strict"; return (' + m[1] + ');')(); if(Array.isArray(arr)) return arr; }catch(e){}
+    }
+    return null;
+  }
+
+  els.fetchLiveBtn.addEventListener('click', async () => {
+    els.fetchLiveBtn.disabled = true;
+    els.status2.innerHTML = '<span class="spinner"></span>Fetching live Google Sheet data...';
+    try{
+      const res = await fetch(SECOND_SOURCE_URL, { method:'GET', mode:'cors', redirect:'follow' });
+      const text = await res.text();
+      const arr = parseArrayFromText(text);
+      if(!arr){
+        els.status2.textContent = 'Fetched, but could not parse a data array from the response.';
+        els.fetchLiveBtn.disabled = false;
+        return;
+      }
+      liveRows = arr;
+      const dataCount = liveRows.filter(isDataRow).length;
+      const maxNo = liveRows.filter(isDataRow).reduce((mx,r) => { const n = validMsgNo(r); return n !== null && n > mx ? n : mx; }, 0);
+      els.status2.textContent = 'Loaded ' + liveRows.length + ' rows (' + dataCount + ' data rows). Highest Message No seen: ' + maxNo;
+      checkReady();
+    }catch(e){
+      els.status2.textContent = 'Failed to fetch (possibly blocked by CORS or network). ' + e.message;
+    }finally{
+      els.fetchLiveBtn.disabled = false;
+    }
+  });
+
+  function checkReady(){
+    els.previewBtn.disabled = !(githubRows && liveRows);
+  }
+
+  // ---------- Combine ----------
+
+  function combine(ghRows, lvRows, cutoff){
+    const map = new Map();
+    let ghCount = 0, liveIncluded = 0, liveExcludedByCutoff = 0, overlapCount = 0;
+
+    ghRows.forEach(r => {
+      if(!isDataRow(r)) return;
+      const n = validMsgNo(r); if(n === null) return;
+      map.set(n, r); ghCount++;
+    });
+
+    lvRows.forEach(r => {
+      if(!isDataRow(r)) return;
+      const n = validMsgNo(r); if(n === null) return;
+      if(n > cutoff){ liveExcludedByCutoff++; return; }
+      if(map.has(n)) overlapCount++;
+      map.set(n, r);
+      liveIncluded++;
+    });
+
+    const combined = Array.from(map.values()).sort((a,b) => validMsgNo(a) - validMsgNo(b));
+    return { combined, ghCount, liveIncluded, liveExcludedByCutoff, overlapCount };
+  }
+
+  // ---------- Purge (scoped to messageNo <= purgeCutoff) ----------
+
+  function parseTopics(str){ return String(str || '').split(',').map(t => t.trim()).filter(Boolean); }
+  function topicNumber(t){ const m = t.match(/^(\d+)/); return m ? m[1] : t; }
+
+  function purge(rows, purgeIdsRaw, purgeCutoff){
+    const purgeSet = new Set(purgeIdsRaw.map(s => s.trim()).filter(Boolean));
+    const removed = [], edited = [], kept = [];
+    const removedMsgNos = new Set();
+    let inScopeCount = 0;
+
+    rows.forEach(row => {
+      if(!isDataRow(row)){ kept.push(row); return; }
+      const n = validMsgNo(row);
+      const inScope = purgeSet.size > 0 && n !== null && n <= purgeCutoff;
+      if(inScope) inScopeCount++;
+      if(!inScope){ kept.push(row); return; }
+
+      const topicsBefore = parseTopics(row[4]);
+      const nums = topicsBefore.map(topicNumber);
+      const remaining = topicsBefore.filter((t,i) => !purgeSet.has(nums[i]));
+
+      if(remaining.length === 0 && topicsBefore.length > 0){
+        removed.push({ row });
+        removedMsgNos.add(n);
+        return;
+      }
+      if(remaining.length !== topicsBefore.length){
+        const newRow = row.slice(); newRow[4] = remaining.join(', ');
+        edited.push({ msgNo: row[5], before: row[4], after: newRow[4] });
+        kept.push(newRow);
+        return;
+      }
+      kept.push(row);
+    });
+
+    const removedByMsgNo = new Map();
+    removed.forEach(r => { const n = validMsgNo(r.row); if(n !== null) removedByMsgNo.set(n, r.row); });
+
+    const orphans = [];
+    kept.forEach(row => {
+      if(!isDataRow(row)) return;
+      const ref = row[6];
+      if(ref === '' || ref === undefined || ref === null) return;
+      const refNo = parseInt(ref, 10);
+      if(!isNaN(refNo) && removedMsgNos.has(refNo)){
+        orphans.push({ child: row, parent: removedByMsgNo.get(refNo) || null, refNo });
+      }
+    });
+
+    return { kept, removed, edited, orphans, inScopeCount };
+  }
+
+  // ---------- Step 3: Preview ----------
+
+  els.previewBtn.addEventListener('click', () => {
+    els.status3.textContent = '';
+    const cutoff = parseInt(els.cutoffInput.value, 10);
+    if(isNaN(cutoff)){
+      els.status3.innerHTML = '<span class="error-text">Enter a valid combine cutoff Message No.</span>';
+      return;
+    }
+
+    const combineResult = combine(githubRows, liveRows, cutoff);
+    const maxCombinedMsgNo = combineResult.combined.reduce((mx,r) => { const n = validMsgNo(r); return n !== null && n > mx ? n : mx; }, 0);
+
+    const purgeEnabled = els.purgeToggle.checked;
+    let topicParams = [];
+    let purgeCutoff = null;
+
+    if(purgeEnabled){
+      topicParams = els.topicInput.value.split(',').map(s => s.trim()).filter(Boolean);
+      purgeCutoff = parseInt(els.purgeCutoffInput.value, 10);
+      if(topicParams.length === 0){
+        els.status3.innerHTML = '<span class="error-text">Enter at least one topic number to purge, or uncheck purging.</span>';
+        return;
+      }
+      if(isNaN(purgeCutoff)){
+        els.status3.innerHTML = '<span class="error-text">Enter a valid purge-scope Message No.</span>';
+        return;
+      }
+      if(purgeCutoff >= maxCombinedMsgNo){
+        els.status3.innerHTML = '<span class="error-text">Purge-scope Message No (' + purgeCutoff + ') must be less than the combined data\'s max Message No (' + maxCombinedMsgNo + ').</span>';
+        return;
+      }
+    }
+
+    headerRowsCache = githubRows.filter(r => !isDataRow(r));
+    const combinedWithHeader = headerRowsCache.concat(combineResult.combined);
+
+    const purgeResult = purgeEnabled
+      ? purge(combinedWithHeader, topicParams, purgeCutoff)
+      : { kept: combinedWithHeader, removed: [], edited: [], orphans: [], inScopeCount: 0 };
+
+    finalRows = purgeResult.kept;
+    retiredRows = purgeResult.removed.map(r => r.row);
+
+    // Combine stats
+    els.statGithub.textContent = combineResult.ghCount;
+    els.statLiveIncluded.textContent = combineResult.liveIncluded;
+    els.statLiveExcluded.textContent = combineResult.liveExcludedByCutoff;
+    els.statOverlap.textContent = combineResult.overlapCount;
+    els.statFinal.textContent = finalRows.filter(isDataRow).length;
+    els.k1Value.textContent = cutoff;
+
+    // Purge stats + report
+    if(purgeEnabled){
+      els.purgeReportSection.style.display = 'block';
+      els.statPurgeScope.textContent = purgeResult.inScopeCount;
+      els.statPurgeRemoved.textContent = purgeResult.removed.length;
+      els.statPurgeEdited.textContent = purgeResult.edited.length;
+
+      if(purgeResult.orphans.length > 0){
+        const rowsHtml = purgeResult.orphans.map(o => {
+          const parent = o.parent, child = o.child;
+          const parentMsg = parent ? escapeHtml(String(parent[3]||'').slice(0,100).replace(/\n/g,' ')) : '(not found)';
+          const parentMeta = parent ? escapeHtml(parent[0]) + ' • ' + escapeHtml(parent[2]) + ' • topics: ' + escapeHtml(parent[4]) : '';
+          const childMsg = escapeHtml(String(child[3]||'').slice(0,100).replace(/\n/g,' '));
+          const childMeta = escapeHtml(child[0]) + ' • ' + escapeHtml(child[2]) + ' • topics: ' + escapeHtml(child[4]);
+          return '<tr><td><b>#' + escapeHtml(o.refNo) + '</b> (removed)<br><span class="meta">' + parentMeta + '</span><br>' + parentMsg + '</td>' +
+                 '<td><b>#' + escapeHtml(child[5]) + '</b> (kept)<br><span class="meta">' + childMeta + '</span><br>' + childMsg + '</td></tr>';
+        }).join('');
+        els.orphanSection.innerHTML =
+          '<div class="orphan-box"><b>⚠ ' + purgeResult.orphans.length + ' orphaned RefNo found.</b> ' +
+          'These are handled gracefully by the app (shown as standalone messages) - review if you\'d rather fix the tagging instead.</div>' +
+          '<div class="scroll"><table><thead><tr><th>Removed parent</th><th>Kept child</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
+      } else {
+        els.orphanSection.innerHTML = '<div class="stat ok" style="max-width:320px;"><b>0</b>Orphaned RefNo - safe to publish</div>';
+      }
+
+      els.removedTableBody.innerHTML = purgeResult.removed.slice(0, 100).map(r => {
+        const row = r.row;
+        const msg = String(row[3] || '').slice(0, 80).replace(/\n/g, ' ');
+        return '<tr><td>' + escapeHtml(row[5]) + '</td><td>' + escapeHtml(row[0]) + '</td><td>' +
+          escapeHtml(row[2]) + '</td><td>' + escapeHtml(msg) + '</td><td>' + escapeHtml(row[4]) + '</td></tr>';
+      }).join('');
+
+      els.editedTableBody.innerHTML = purgeResult.edited.slice(0, 100).map(e =>
+        '<tr><td>' + escapeHtml(e.msgNo) + '</td><td>' + escapeHtml(e.before) + '</td><td>' + escapeHtml(e.after) + '</td></tr>'
+      ).join('');
+
+      els.downloadRetiredBtn.style.display = retiredRows.length ? 'inline-block' : 'none';
+    } else {
+      els.purgeReportSection.style.display = 'none';
+      els.downloadRetiredBtn.style.display = 'none';
+    }
+
+    els.status3.textContent = 'Preview ready. Review the report below, then confirm and download.';
+    els.report.style.display = 'block';
+  });
+
+  // ---------- Downloads ----------
+
+  function downloadBlob(content, filename, mime){
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  els.downloadJsonBtn.addEventListener('click', () => {
+    if(!finalRows) return;
+    const text = 'chatData0 = ' + JSON.stringify(finalRows) + ';\n';
+    downloadBlob(text, 'chatData0.json', 'application/json');
+  });
+
+  function csvField(v){
+    const s = (v === undefined || v === null) ? '' : String(v);
+    if(/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  els.downloadCsvBtn.addEventListener('click', () => {
+    if(!finalRows) return;
+    const csv = finalRows.map(row => (Array.isArray(row) ? row : [row]).map(csvField).join(',')).join('\r\n');
+    downloadBlob(csv, 'backup-sheet-export.csv', 'text/csv');
+  });
+
+  els.downloadRetiredBtn.addEventListener('click', () => {
+    if(!retiredRows || !retiredRows.length) return;
+    const withHeader = (headerRowsCache || []).concat(retiredRows);
+    const text = 'chatData0_retired = ' + JSON.stringify(withHeader) + ';\n';
+    const stamp = new Date().toISOString().slice(0,10);
+    downloadBlob(text, 'chatData0_retired_' + stamp + '.json', 'application/json');
+  });
+
+})();
+</script>
+</body>
+</html>
