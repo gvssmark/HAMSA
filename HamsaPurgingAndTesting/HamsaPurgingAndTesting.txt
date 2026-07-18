@@ -1,0 +1,19 @@
+BookPrinting:
+Google sheet with data
+["Date","Time","Sender","Asvasam","Poem No","Message","Message No","Ref No","Ref Sender","Topic1","Meaning","Bhavam","added"],
+Get data from AllMessages and reformat it as above.
+use google appscript link to fetch data
+Meaning and bhavam are the new columns, data for these is to be extracted from message column.
+
+
+Export2GitHub:
+Fetches GitHub + the live Google Sheet, combines up to a cutoff, optionally purges retired topics with a full review, then downloads. Nothing is uploaded anywhere from here.
+
+hamsa-index-test:
+Local Testing
+
+PadyasoundaryamTopicPrint:
+Select a topic, generate a print-ready A4 book, then use Print / Save as PDF.
+
+TestWithLocalData:
+Testing Tool with local data
