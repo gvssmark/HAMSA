@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAMSA - Topic Print Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ramabhadra&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#7a1f2b; --maroon-dark:#5c1620; --gold:#c9962c;
+    --ivory:#faf6ee; --paper:#fffdf8; --ink:#2b2320; --ink-soft:#6b5f56; --line:#e7ddc9;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#e9e2d3; color:var(--ink); font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+
+  /* ---------- Loader panel (screen only, never printed) ---------- */
+  .no-print{ }
+  #loaderPanel{
+    max-width:800px; margin:20px auto; background:var(--paper); border-radius:14px;
+    box-shadow:0 4px 24px rgba(0,0,0,0.12); overflow:hidden;
+  }
+  #loaderPanel header{ background:linear-gradient(135deg,var(--maroon),var(--maroon-dark)); color:#fff8ea; padding:18px 22px; }
+  #loaderPanel header h1{ margin:0; font-size:19px; }
+  #loaderPanel header p{ margin:4px 0 0; font-size:12.5px; color:#e9c98f; }
+  #loaderPanel main{ padding:20px 22px 30px; }
+  .step{ border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:16px; background:var(--ivory); }
+  .step h2{ margin:0 0 4px; font-size:14.5px; color:var(--maroon); }
+  .step .hint{ font-size:11.5px; color:var(--ink-soft); margin-bottom:10px; }
+  label{ display:block; font-weight:600; font-size:12.5px; margin-bottom:5px; }
+  select, input[type=text]{ width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:14px; margin-bottom:12px; }
+  .checkbox-row{ display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:13px; }
+  .checkbox-row input{ width:auto; }
+  button{ border:none; border-radius:9px; padding:10px 18px; font-weight:600; font-size:13.5px; cursor:pointer; margin-right:8px; margin-top:6px; }
+  .btn-primary{ background:var(--maroon); color:#fff8ea; }
+  .btn-primary:disabled{ background:#c8b9a8; cursor:not-allowed; }
+  .btn-gold{ background:var(--gold); color:#3a2600; }
+  .btn-gold:disabled{ background:#e6dcc3; color:#a89a86; cursor:not-allowed; }
+  #status1, #status2, #genStatus{ font-size:12.5px; margin-top:8px; white-space:pre-wrap; color:var(--ink-soft); }
+  .spinner{ width:15px;height:15px;border-radius:50%; display:inline-block; vertical-align:middle; margin-right:6px;
+            border:2.5px solid var(--line); border-top-color:var(--maroon); animation:spin .9s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ---------- Printable book ---------- */
+  #bookWrap{ display:none; }
+  #bookWrap.ready{ display:block; }
+
+  @page{ size:A4; margin:20mm 18mm; }
+
+  .book-page{
+    max-width:800px; margin:20px auto; background:var(--paper);
+    box-shadow:0 4px 24px rgba(0,0,0,0.12); padding:26mm 20mm;
+    font-family:'Ramabhadra','Poppins',sans-serif;
+  }
+  .cover-page{
+    min-height:245mm; display:flex; flex-direction:column; position:relative;
+    page-break-after:always;
+  }
+  .cover-icon{ position:absolute; top:0; right:0; width:96px; height:96px; }
+  .cover-body{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .cover-kicker{ font-family:'Poppins',sans-serif; font-size:13px; letter-spacing:1.5px; color:var(--gold); text-transform:uppercase; font-weight:600; margin-bottom:18px; }
+  .cover-topic{ font-size:34px; color:var(--maroon); font-weight:700; line-height:1.35; max-width:520px; }
+  .cover-rule{ width:120px; height:2px; background:var(--gold); margin:26px auto; }
+  .cover-presenter-label{ font-family:'Poppins',sans-serif; font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .cover-presenter{ font-size:20px; color:var(--ink); font-weight:600; }
+  .cover-footer{ font-family:'Poppins',sans-serif; font-size:11px; color:var(--ink-soft); text-align:center; }
+
+  .content-page{ padding-top:8mm; }
+  .print-msg{ margin:0 0 14px 0; }
+  .print-msg.avoid-break{ break-inside:avoid; page-break-inside:avoid; }
+  .print-msg.depth-1, .print-msg.depth-2, .print-msg.depth-3, .print-msg.depth-4{ margin-left:16px; padding-left:12px; border-left:2px solid var(--line); }
+  .print-msg-header{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:4px; font-family:'Poppins',sans-serif; break-after:avoid; page-break-after:avoid; }
+  .print-sender{ font-weight:700; font-size:13.5px; color:var(--maroon); }
+  .print-sender.reply{ font-size:12px; color:#2255aa; }
+  .print-date{ font-size:10px; color:var(--ink-soft); }
+  .print-body{ font-size:14.5px; line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+  .print-body img{ max-width:100%; height:auto; display:block; border-radius:6px; margin:6px 0; }
+  .print-body iframe{ display:none; } /* video can't print - omitted, message text/links still visible */
+
+  #printBtn{ position:fixed; bottom:22px; right:22px; z-index:20; }
+
+  @media print{
+    body{ background:#fff; }
+    #loaderPanel, #printBtn, .no-print{ display:none !important; }
+    .book-page{ box-shadow:none; margin:0; max-width:none; padding:0; }
+    .cover-icon{ width:25mm; height:25mm; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loaderPanel" class="no-print">
+  <header>
+    <h1>Topic Print Book Builder</h1>
+    <p>Select a topic, generate a print-ready A4 book, then use Print / Save as PDF.</p>
+  </header>
+  <main>
+    <div class="step">
+      <h2>Step 1 - Fetch current chatData0.json from GitHub</h2>
+      <div class="hint">Source: https://gvssmark.github.io/HAMSA/chatData0.json</div>
+      <button class="btn-primary" id="fetchGithubBtn">Fetch from GitHub</button>
+      <div id="status1"></div>
+    </div>
+
+    <div class="step">
+      <h2>Step 2 - Optionally include live Google Sheet data</h2>
+      <div class="checkbox-row">
+        <input type="checkbox" id="mergeLiveCheckbox">
+        <label for="mergeLiveCheckbox" style="margin:0;">Also merge live Google Sheet data (only needed if the topic has very recent messages)</label>
+      </div>
+      <button class="btn-primary" id="fetchLiveBtn" disabled>Fetch live Google Sheet data</button>
+      <div id="status2"></div>
+    </div>
+
+    <div class="step">
+      <h2>Step 3 - Choose topic and presenter</h2>
+      <label>Topic</label>
+      <select id="topicSelect" disabled><option>Load data first...</option></select>
+      <label>Presenter name</label>
+      <input type="text" id="presenterInput" placeholder="e.g. Gayatri Devi">
+      <button class="btn-primary" id="generateBtn" disabled>Generate Printable Book</button>
+      <div id="genStatus"></div>
+    </div>
+  </main>
+</div>
+
+<div id="bookWrap"></div>
+
+<button id="printBtn" class="btn-gold no-print" style="display:none;">🖨 Print / Save as PDF</button>
+
+<script>
+(function(){
+  "use strict";
+
+  const CHATDATA_URL = "https://gvssmark.github.io/HAMSA/chatData0.json";
+  const SECOND_SOURCE_URL = "https://script.google.com/macros/s/AKfycbxDuDW1plTf8LusgXNHjA-5rflH33T07ahVKbAYmDTuza_A_qZ5Lfb4wFzSWIuktWVd0A/exec";
+  const ICON_URL = "https://gvssmark.github.io/HAMSA/icons/icon-192.png";
+
+  const els = {};
+  ['fetchGithubBtn','fetchLiveBtn','mergeLiveCheckbox','status1','status2','topicSelect',
+   'presenterInput','generateBtn','genStatus','bookWrap','printBtn'
+  ].forEach(id => { els[id] = document.getElementById(id); });
+
+  let githubRows = null;
+  let liveRows = null;
+  let allMessages = [];
+  let byMessageNo = new Map();
+  let childrenOf = new Map();
+
+  function isDataRow(r){ return Array.isArray(r) && /^\d{2}\/\d{2}\/\d{4}$/.test(String(r[0])); }
+  function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function normalizeRow(row, sourceName){
+    if(!Array.isArray(row) || row.length < 6) return null;
+    const dateStr = row[0], timeStr = row[1];
+    const dm = String(dateStr || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    const tm = String(timeStr || '').match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+    if(!dm || !tm) return null;
+    const msgNo = parseInt(row[5], 10);
+    if(isNaN(msgNo)) return null;
+    let refNo = row[6];
+    refNo = (refNo === '' || refNo === undefined || refNo === null) ? null : parseInt(refNo, 10);
+    if(refNo !== null && isNaN(refNo)) refNo = null;
+    const dateObj = new Date(+dm[3], (+dm[2]) - 1, +dm[1], +tm[1], +tm[2], +tm[3]);
+    const sender = String(row[2] || '').replace(/~/g, '').trim();
+    const message = String(row[3] || '').trim();
+    let topics = String(row[4] || '').split(',').map(t => t.trim()).filter(Boolean);
+    if(topics.length === 0) topics = ['(వర్గీకరించనిది)'];
+    return { date: dateStr, time: timeStr, dateObj, sender, message, topics, messageNo: msgNo, refNo, source: sourceName };
+  }
+
+  function naturalTopicSort(a, b){
+    const na = parseInt(a, 10), nb = parseInt(b, 10);
+    if(!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+    return a.localeCompare(b, 'te');
+  }
+
+  // ---- Sanitizer (verbatim from the main app) ----
+  const SANITIZE_ALLOWED_TAGS = new Set(['B','STRONG','I','EM','U','S','DEL','SPAN','BR','SUB','SUP']);
+  const SANITIZE_DROP_ENTIRELY = new Set(['SCRIPT','STYLE','OBJECT','EMBED','LINK','META','NOSCRIPT']);
+  const SANITIZE_ALLOWED_STYLE_PROPS = new Set(['color','background-color','font-weight','font-style','text-decoration']);
+
+  function isSafeHttpUrl(src){ return /^https?:\/\//i.test(String(src || '').trim()); }
+
+  function extractYoutubeEmbedUrl(src){
+    const m = String(src || '').trim().match(/^https?:\/\/(?:www\.)?youtube(?:-nocookie)?\.com\/embed\/([a-zA-Z0-9_-]{6,20})(?:[?&][^"'<>]*)?$/i);
+    if(!m) return null;
+    return 'https://www.youtube-nocookie.com/embed/' + m[1];
+  }
+
+  function sanitizeStyleAttr(styleText){
+    const out = [];
+    String(styleText).split(';').forEach(decl => {
+      const idx = decl.indexOf(':');
+      if(idx === -1) return;
+      const prop = decl.slice(0, idx).trim().toLowerCase();
+      const val = decl.slice(idx + 1).trim();
+      if(SANITIZE_ALLOWED_STYLE_PROPS.has(prop) && !/url\s*\(|expression\s*\(|javascript:|import|@/i.test(val)){
+        out.push(prop + ':' + val);
+      }
+    });
+    return out.join('; ');
+  }
+
+  function sanitizeWalk(sourceNode, targetParent){
+    Array.from(sourceNode.childNodes).forEach(child => {
+      if(child.nodeType === Node.TEXT_NODE){
+        targetParent.appendChild(document.createTextNode(child.textContent));
+        return;
+      }
+      if(child.nodeType !== Node.ELEMENT_NODE) return;
+      const tag = child.tagName;
+      if(SANITIZE_DROP_ENTIRELY.has(tag)) return;
+
+      if(tag === 'IMG'){
+        const src = child.getAttribute('src') || '';
+        if(!isSafeHttpUrl(src)) return;
+        const img = document.createElement('img');
+        img.setAttribute('src', src.trim());
+        img.setAttribute('loading', 'lazy');
+        const alt = child.getAttribute('alt');
+        if(alt) img.setAttribute('alt', alt);
+        targetParent.appendChild(img);
+        return;
+      }
+
+      if(tag === 'IFRAME'){
+        const embedUrl = extractYoutubeEmbedUrl(child.getAttribute('src'));
+        if(!embedUrl) return;
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('src', embedUrl);
+        iframe.setAttribute('width', '100%');
+        iframe.setAttribute('height', '220');
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('loading', 'lazy');
+        targetParent.appendChild(iframe);
+        return;
+      }
+
+      if(SANITIZE_ALLOWED_TAGS.has(tag)){
+        const clean = document.createElement(tag);
+        if(tag === 'SPAN' && child.hasAttribute('style')){
+          const safeStyle = sanitizeStyleAttr(child.getAttribute('style'));
+          if(safeStyle) clean.setAttribute('style', safeStyle);
+        }
+        targetParent.appendChild(clean);
+        sanitizeWalk(child, clean);
+      } else {
+        sanitizeWalk(child, targetParent);
+      }
+    });
+  }
+
+  function sanitizeMessageHtml(rawText){
+    const withBreaks = String(rawText).replace(/\n/g, '<br>');
+    const doc = new DOMParser().parseFromString('<div>' + withBreaks + '</div>', 'text/html');
+    const frag = document.createDocumentFragment();
+    sanitizeWalk(doc.body.firstChild, frag);
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(frag);
+    return wrapper.innerHTML;
+  }
+
+  // ---- Step 1: GitHub fetch (script-tag technique) ----
+  function loadScriptOnce(url){
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = url;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('script load failed: ' + url));
+      document.body.appendChild(s);
+    });
+  }
+
+  els.fetchGithubBtn.addEventListener('click', async () => {
+    els.fetchGithubBtn.disabled = true;
+    els.status1.innerHTML = '<span class="spinner"></span>Downloading from GitHub...';
+    try{
+      const bustUrl = CHATDATA_URL + '?cb=' + Date.now();
+      await loadScriptOnce(bustUrl);
+      if(typeof window.chatData0 === 'undefined' || !Array.isArray(window.chatData0)){
+        els.status1.textContent = 'Loaded, but no valid chatData0 array was found.';
+        els.fetchGithubBtn.disabled = false;
+        return;
+      }
+      githubRows = window.chatData0;
+      try{ delete window.chatData0; }catch(e){ window.chatData0 = undefined; }
+      const dataCount = githubRows.filter(isDataRow).length;
+      els.status1.textContent = 'Loaded ' + githubRows.length + ' rows (' + dataCount + ' data rows).';
+      els.fetchLiveBtn.disabled = false;
+      buildFromCurrentData();
+    }catch(e){
+      els.status1.textContent = 'Failed: ' + e.message;
+    }finally{
+      els.fetchGithubBtn.disabled = false;
+    }
+  });
+
+  // ---- Step 2: live Google Sheet fetch ----
+  function parseArrayFromText(text){
+    try{ const j = JSON.parse(text); if(Array.isArray(j)) return j; }catch(e){}
+    const m = text.match(/=\s*(\[[\s\S]*\])\s*;?\s*$/);
+    if(m){
+      try{ const arr = Function('"use strict"; return (' + m[1] + ');')(); if(Array.isArray(arr)) return arr; }catch(e){}
+    }
+    return null;
+  }
+
+  els.fetchLiveBtn.addEventListener('click', async () => {
+    els.fetchLiveBtn.disabled = true;
+    els.status2.innerHTML = '<span class="spinner"></span>Fetching live Google Sheet data...';
+    try{
+      const res = await fetch(SECOND_SOURCE_URL, { method:'GET', mode:'cors', redirect:'follow' });
+      const text = await res.text();
+      const arr = parseArrayFromText(text);
+      if(!arr){
+        els.status2.textContent = 'Fetched, but could not parse a data array from the response.';
+        return;
+      }
+      liveRows = arr;
+      const dataCount = liveRows.filter(isDataRow).length;
+      els.status2.textContent = 'Loaded ' + liveRows.length + ' rows (' + dataCount + ' data rows).';
+      buildFromCurrentData();
+    }catch(e){
+      els.status2.textContent = 'Failed to fetch (possibly blocked by CORS or network). ' + e.message;
+    }finally{
+      els.fetchLiveBtn.disabled = false;
+    }
+  });
+
+  // ---- Build merged dataset + topic dropdown whenever a source changes ----
+  function buildFromCurrentData(){
+    if(!githubRows) return;
+    const map = new Map();
+    githubRows.forEach(row => { const n = normalizeRow(row, 'backlog'); if(n) map.set(n.messageNo, n); });
+    if(els.mergeLiveCheckbox.checked && liveRows){
+      liveRows.forEach(row => { const n = normalizeRow(row, 'live'); if(n) map.set(n.messageNo, n); });
+    }
+    allMessages = Array.from(map.values()).sort((a,b) => a.messageNo - b.messageNo);
+    byMessageNo = new Map(allMessages.map(m => [m.messageNo, m]));
+    childrenOf = new Map();
+    allMessages.forEach(m => {
+      if(m.refNo !== null){
+        if(!childrenOf.has(m.refNo)) childrenOf.set(m.refNo, []);
+        childrenOf.get(m.refNo).push(m);
+      }
+    });
+
+    const topicCounts = new Map();
+    allMessages.forEach(m => m.topics.forEach(t => topicCounts.set(t, (topicCounts.get(t)||0) + 1)));
+    const topics = Array.from(topicCounts.keys()).sort(naturalTopicSort);
+
+    els.topicSelect.innerHTML = '';
+    topics.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t + ' (' + topicCounts.get(t) + ' messages)';
+      els.topicSelect.appendChild(opt);
+    });
+    els.topicSelect.disabled = false;
+    els.generateBtn.disabled = false;
+  }
+
+  els.mergeLiveCheckbox.addEventListener('change', () => {
+    if(els.mergeLiveCheckbox.checked && !liveRows){
+      els.fetchLiveBtn.click();
+    } else {
+      buildFromCurrentData();
+    }
+  });
+
+  // ---- Step 3: Generate the printable book ----
+  const AVOID_BREAK_CHAR_LIMIT = 600; // messages under this length never split across a page
+
+  function buildMessageNode(msg, depth){
+    const wrap = document.createElement('div');
+    const isShort = msg.message.length <= AVOID_BREAK_CHAR_LIMIT;
+    wrap.className = 'print-msg depth-' + Math.min(depth, 4) + (isShort ? ' avoid-break' : '');
+    const header = document.createElement('div');
+    header.className = 'print-msg-header';
+    header.innerHTML =
+      '<span class="print-sender' + (depth === 0 ? '' : ' reply') + '">' + escapeHtml(msg.sender) + '</span>' +
+      '<span class="print-date">' + msg.date + ' • ' + msg.time + '</span>';
+    wrap.appendChild(header);
+    const body = document.createElement('div');
+    body.className = 'print-body';
+    body.innerHTML = sanitizeMessageHtml(msg.message);
+    wrap.appendChild(body);
+
+    const kids = (childrenOf.get(msg.messageNo) || []).slice().sort((a,b) => a.messageNo - b.messageNo);
+    const frag = document.createDocumentFragment();
+    frag.appendChild(wrap);
+    kids.forEach(k => frag.appendChild(buildMessageNode(k, depth + 1)));
+    return frag;
+  }
+
+  els.generateBtn.addEventListener('click', () => {
+    const topicName = els.topicSelect.value;
+    const presenter = els.presenterInput.value.trim();
+    if(!topicName){ els.genStatus.textContent = 'Choose a topic first.'; return; }
+    if(!presenter){ els.genStatus.textContent = 'Enter a presenter name.'; return; }
+
+    const roots = allMessages.filter(m => {
+      if(!m.topics.includes(topicName)) return false;
+      if(m.refNo === null) return true;
+      return !byMessageNo.has(m.refNo);
+    }).sort((a,b) => a.messageNo - b.messageNo);
+
+    if(roots.length === 0){
+      els.genStatus.textContent = 'No messages found for this topic.';
+      return;
+    }
+
+    const dates = allMessages.filter(m => m.topics.includes(topicName)).map(m => m.dateObj);
+    const minDate = new Date(Math.min.apply(null, dates));
+    const maxDate = new Date(Math.max.apply(null, dates));
+    const fmtDate = d => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+
+    els.bookWrap.innerHTML = '';
+
+    const cover = document.createElement('div');
+    cover.className = 'book-page cover-page';
+    cover.innerHTML =
+      '<img class="cover-icon" src="' + ICON_URL + '" alt="HAMSA">' +
+      '<div class="cover-body">' +
+        '<div class="cover-kicker">HAMSA · సందేశ సంచయం</div>' +
+        '<div class="cover-topic">' + escapeHtml(topicName) + '</div>' +
+        '<div class="cover-rule"></div>' +
+        '<div class="cover-presenter-label">Presented by</div>' +
+        '<div class="cover-presenter">' + escapeHtml(presenter) + '</div>' +
+      '</div>' +
+      '<div class="cover-footer">' + fmtDate(minDate) + ' – ' + fmtDate(maxDate) + ' &nbsp;•&nbsp; ' + dates.length + ' messages</div>';
+    els.bookWrap.appendChild(cover);
+
+    const content = document.createElement('div');
+    content.className = 'book-page content-page';
+    const frag = document.createDocumentFragment();
+    roots.forEach(r => frag.appendChild(buildMessageNode(r, 0)));
+    content.appendChild(frag);
+    els.bookWrap.appendChild(content);
+
+    els.bookWrap.classList.add('ready');
+    els.printBtn.style.display = 'block';
+    els.genStatus.textContent = 'Book generated - scroll down to preview, or click Print / Save as PDF.';
+    els.bookWrap.scrollIntoView({ behavior:'smooth' });
+  });
+
+  els.printBtn.addEventListener('click', () => window.print());
+
+})();
+</script>
+</body>
+</html>
