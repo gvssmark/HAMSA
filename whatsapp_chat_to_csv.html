@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WhatsApp Chat to CSV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; max-width: 700px; margin: auto; }
+    .option-group { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin: 10px 0; }
+    input, button { margin-top: 10px; padding: 8px; font-size: 16px; }
+    label { cursor: pointer; margin-right: 15px; }
+    #status { margin-top: 10px; font-weight: bold; }
+    #status.ok { color: green; }
+    #status.err { color: #b00020; }
+    #tdata { margin-top: 20px; max-height: 400px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h2>WhatsApp Chat Cleaner & CSV Exporter</h2>
+
+  <input type="file" id="fileInput" accept=".txt" />
+
+  <div class="option-group">
+    <p><strong>Extraction Starting Point:</strong></p>
+    <input type="radio" id="optAuto" name="extractOpt" value="auto" checked>
+    <label for="optAuto">Auto-detect from Last Line (GAS)</label>
+    <br>
+    <input type="radio" id="optDate" name="extractOpt" value="manual">
+    <label for="optDate">Start from specific Date:</label>
+    <input type="date" id="manualDate" />
+  </div>
+
+  <button id="processBtn">Process & Download CSV</button>
+  <p id="status"></p>
+  <div id='tdata'></div>
+
+  <script>
+    const FILE_INPUT = document.getElementById("fileInput");
+    const PROCESS_BTN = document.getElementById("processBtn");
+    const STATUS = document.getElementById("status");
+    const MANUAL_DATE_INPUT = document.getElementById("manualDate");
+    const OPT_AUTO = document.getElementById("optAuto");
+
+    // Capturing version so we can pull out the individual date/time components.
+    const TIMESTAMP_REGEX = /^\[(\d{2})\/(\d{2})\/(\d{4}), (\d{2}):(\d{2}):(\d{2})\]/;
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzGpguV0hLcJzvU2PLC70zaSJqiw-MPxtD_QKlKsuDV-s7UYb0EPMIYf_gTeoRCeA2cXg/exec";
+
+    function setStatus(text, kind) {
+      STATUS.textContent = text;
+      STATUS.className = kind === "err" ? "err" : (kind === "ok" ? "ok" : "");
+    }
+
+    // WhatsApp exports frequently contain invisible formatting characters
+    // (LRM, narrow no-break space, zero-width space) right around the
+    // timestamp. These were previously stripped by cleanLine() *after* the
+    // exact-string search already ran, which is why the search so often
+    // failed to find the reference line. Stripping them before comparison
+    // fixes that class of failure.
+    function stripInvisible(str) {
+      return (str || "").replace(/\u200e|\u202f|\u200b/g, "");
+    }
+
+    // Parses the leading "[DD/MM/YYYY, HH:MM:SS]" of a line into a Date.
+    // Returns null if the line doesn't start with a timestamp.
+    function extractTimestamp(line) {
+      const cleaned = stripInvisible(line).trim();
+      const match = cleaned.match(TIMESTAMP_REGEX);
+      if (!match) return null;
+      const [, day, month, year, hour, min, sec] = match;
+      const d = new Date(
+        Number(year), Number(month) - 1, Number(day),
+        Number(hour), Number(min), Number(sec)
+      );
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // Fetches the last recorded row's array[0] from the sheet and returns
+    // its timestamp as a Date (or null if it can't be determined).
+    async function getLastRecordTimestamp() {
+      try {
+        const res = await fetch(GAS_URL);
+        const json = await res.json();
+        if (Array.isArray(json) && json.length > 0) {
+          const lastRow = json[json.length - 1];
+          if (Array.isArray(lastRow)) return extractTimestamp(lastRow[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch last record timestamp:", err);
+      }
+      return null;
+    }
+
+    // Two timestamps are considered the same message-minute if their
+    // date, hour, and minute all match — seconds are ignored, since the
+    // "ss" value can differ by a second or two between exports of the
+    // same message.
+    function sameMinute(a, b) {
+      return a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate() &&
+        a.getHours() === b.getHours() &&
+        a.getMinutes() === b.getMinutes();
+    }
+
+    // Scans the file's text lines for one whose timestamp matches
+    // candidateTs at minute precision (seconds ignored). Returns the
+    // index of the LAST such occurrence (to guard against multiple
+    // messages in the same minute), or -1 if none found.
+    function findMinuteMatchIndex(lines, candidateTs) {
+      let found = -1;
+      for (let i = 0; i < lines.length; i++) {
+        const ts = extractTimestamp(lines[i]);
+        if (ts && sameMinute(ts, candidateTs)) found = i;
+      }
+      return found;
+    }
+
+    function cleanLine(line) {
+      return line
+        .replace(/["'*]/g, "")
+        .replace(/<This message was edited>/gi, "")
+        .replace(/\u200e|\u202f|\u200b/g, "")
+        .trim();
+    }
+
+    function downloadCSV(data) {
+      const csvContent = data.map(row => `"${row.replace(/"/g, '""')}"`).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "whatsapp_cleaned.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    async function processFile() {
+      const file = FILE_INPUT.files[0];
+      if (!file) {
+        alert("Please select a WhatsApp .txt file.");
+        return;
+      }
+
+      setStatus("Processing...", null);
+      document.getElementById('tdata').innerHTML = "";
+
+      const fileText = await file.text();
+      const lines = fileText.split(/\r?\n/);
+
+      let startIndex = -1;
+
+      if (OPT_AUTO.checked) {
+        // Match against the last recorded row's array[0], ignoring seconds
+        // (matched at minute precision) against the input file's lines.
+        const lastTs = await getLastRecordTimestamp();
+
+        if (!lastTs) {
+          setStatus("Could not determine the last recorded timestamp from the sheet (unreachable, empty, or unreadable). Aborting — no file was processed.", "err");
+          return;
+        }
+
+        const matchedIndex = findMinuteMatchIndex(lines, lastTs);
+
+        if (matchedIndex === -1) {
+          setStatus("Could not find the last recorded timestamp in this file. Aborting — no file was processed.", "err");
+          return;
+        }
+
+        startIndex = matchedIndex + 1; // start right after the matched message
+      } else {
+        const rawDate = MANUAL_DATE_INPUT.value;
+        if (!rawDate) {
+          alert("Please select a date.");
+          setStatus("", null);
+          return;
+        }
+        const [year, month, day] = rawDate.split('-').map(Number);
+        const refDate = new Date(year, month - 1, day, 0, 0, 0);
+
+        // Manual mode doesn't need an exact match — just the first message
+        // on or after the selected date.
+        for (let i = 0; i < lines.length; i++) {
+          const ts = extractTimestamp(lines[i]);
+          if (ts && ts >= refDate) {
+            startIndex = i;
+            break;
+          }
+        }
+      }
+
+      if (startIndex === -1 || startIndex >= lines.length) {
+        setStatus("No messages found after the reference point — nothing new to export.", "ok");
+        return;
+      }
+
+      let tabledata = `<table border=1 style='border-collapse:collapse'>`;
+      const newLines = lines.slice(startIndex).map(cleanLine).filter(line => line !== "");
+      let messages = [];
+      let current = "";
+
+      for (let line of newLines) {
+        if (TIMESTAMP_REGEX.test(line)) {
+          if (current) {
+            messages.push(current.trim());
+            tabledata += `<tr><td>${current}</td></tr>`;
+          }
+          current = line;
+        } else {
+          current += " " + line + '\n';
+        }
+      }
+
+      if (current) {
+        messages.push(current.trim());
+        tabledata += `<tr><td>${current}</td></tr>`;
+      }
+
+      tabledata += `</table>`;
+      document.getElementById('tdata').innerHTML = tabledata;
+
+      if (messages.length === 0) {
+        setStatus("No messages found matching the criteria.", "ok");
+        return;
+      }
+
+      downloadCSV(messages);
+      setStatus(`${messages.length} messages exported successfully.`, "ok");
+    }
+
+    PROCESS_BTN.addEventListener("click", processFile);
+  </script>
+</body>
+</html>
