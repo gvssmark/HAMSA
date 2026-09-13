@@ -74,19 +74,36 @@
       return isNaN(d.getTime()) ? null : d;
     }
 
-    // Fetches the last recorded row from the sheet and returns its
-    // timestamp as a Date (or null if it can't be determined).
-    async function getLastKnownTimestamp() {
+    // Fetches the last N recorded rows from the sheet and returns their
+    // timestamps as Dates, most recent first. Rows whose timestamp can't
+    // be parsed are skipped.
+    async function getRecentTimestamps(n) {
       try {
         const res = await fetch(GAS_URL);
         const json = await res.json();
-        if (Array.isArray(json) && json.length > 0 && Array.isArray(json[json.length - 1])) {
-          return extractTimestamp(json[json.length - 1][0]);
+        if (Array.isArray(json) && json.length > 0) {
+          return json
+            .slice(-n)
+            .reverse()
+            .map(row => Array.isArray(row) ? extractTimestamp(row[0]) : null)
+            .filter(ts => ts !== null);
         }
       } catch (err) {
-        console.error("Failed to fetch last known timestamp:", err);
+        console.error("Failed to fetch recent timestamps:", err);
       }
-      return null;
+      return [];
+    }
+
+    // Scans the file for a line whose timestamp exactly matches candidateTs.
+    // Returns the index of the LAST such occurrence (to guard against
+    // duplicate same-second timestamps), or -1 if none found.
+    function findExactTimestampIndex(lines, candidateTs) {
+      let found = -1;
+      for (let i = 0; i < lines.length; i++) {
+        const ts = extractTimestamp(lines[i]);
+        if (ts && ts.getTime() === candidateTs.getTime()) found = i;
+      }
+      return found;
     }
 
     function cleanLine(line) {
@@ -119,17 +136,37 @@
       setStatus("Processing...", null);
       document.getElementById('tdata').innerHTML = "";
 
-      let refDate = null;   // the Date to compare each line's timestamp against
-      let strict = true;    // true: line must be AFTER refDate; false: ON or AFTER
+      const fileText = await file.text();
+      const lines = fileText.split(/\r?\n/);
+
+      let startIndex = -1;
 
       if (OPT_AUTO.checked) {
-        refDate = await getLastKnownTimestamp();
-        strict = true; // don't re-include the message we already have
+        // Try the last recorded timestamp; if that exact message isn't
+        // present in this file, step back through up to 5 recent records
+        // until one is actually found in the file.
+        const candidates = await getRecentTimestamps(5);
 
-        if (!refDate) {
-          setStatus("Could not determine the last synced timestamp (sheet unreachable, empty, or unreadable). Aborting — no file was processed.", "err");
+        if (candidates.length === 0) {
+          setStatus("Could not determine any recent timestamp from the sheet (unreachable, empty, or unreadable). Aborting — no file was processed.", "err");
           return;
         }
+
+        let matchedIndex = -1;
+        for (const candidateTs of candidates) {
+          const foundIndex = findExactTimestampIndex(lines, candidateTs);
+          if (foundIndex !== -1) {
+            matchedIndex = foundIndex;
+            break;
+          }
+        }
+
+        if (matchedIndex === -1) {
+          setStatus(`Could not find any of the last ${candidates.length} recorded timestamps in this file. Aborting — no file was processed.`, "err");
+          return;
+        }
+
+        startIndex = matchedIndex + 1; // start right after the matched message
       } else {
         const rawDate = MANUAL_DATE_INPUT.value;
         if (!rawDate) {
@@ -138,27 +175,21 @@
           return;
         }
         const [year, month, day] = rawDate.split('-').map(Number);
-        refDate = new Date(year, month - 1, day, 0, 0, 0);
-        strict = false; // include the whole selected day onward
-      }
+        const refDate = new Date(year, month - 1, day, 0, 0, 0);
 
-      const fileText = await file.text();
-      const lines = fileText.split(/\r?\n/);
-
-      // Find the first message line whose timestamp satisfies the comparison,
-      // instead of requiring an exact string match against the reference line.
-      let startIndex = -1;
-      for (let i = 0; i < lines.length; i++) {
-        const ts = extractTimestamp(lines[i]);
-        if (!ts) continue;
-        if (strict ? ts > refDate : ts >= refDate) {
-          startIndex = i;
-          break;
+        // Manual mode doesn't need an exact match — just the first message
+        // on or after the selected date.
+        for (let i = 0; i < lines.length; i++) {
+          const ts = extractTimestamp(lines[i]);
+          if (ts && ts >= refDate) {
+            startIndex = i;
+            break;
+          }
         }
       }
 
-      if (startIndex === -1) {
-        setStatus("No messages found after the reference timestamp — nothing new to export.", "ok");
+      if (startIndex === -1 || startIndex >= lines.length) {
+        setStatus("No messages found after the reference point — nothing new to export.", "ok");
         return;
       }
 
