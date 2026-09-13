@@ -74,21 +74,13 @@
       return isNaN(d.getTime()) ? null : d;
     }
 
-<<<<<<< HEAD
     // Fetches the last recorded row's array[0] from the sheet and returns
     // its timestamp as a Date (or null if it can't be determined).
     async function getLastRecordTimestamp() {
-=======
-    // Fetches the last N recorded rows from the sheet and returns their
-    // timestamps as Dates, most recent first. Rows whose timestamp can't
-    // be parsed are skipped.
-    async function getRecentTimestamps(n) {
->>>>>>> d0bceddbf80428fcfbe8f73f0802657217a862b7
       try {
         const res = await fetch(GAS_URL);
         const json = await res.json();
         if (Array.isArray(json) && json.length > 0) {
-<<<<<<< HEAD
           const lastRow = json[json.length - 1];
           if (Array.isArray(lastRow)) return extractTimestamp(lastRow[0]);
         }
@@ -119,28 +111,6 @@
       for (let i = 0; i < lines.length; i++) {
         const ts = extractTimestamp(lines[i]);
         if (ts && sameMinute(ts, candidateTs)) found = i;
-=======
-          return json
-            .slice(-n)
-            .reverse()
-            .map(row => Array.isArray(row) ? extractTimestamp(row[0]) : null)
-            .filter(ts => ts !== null);
-        }
-      } catch (err) {
-        console.error("Failed to fetch recent timestamps:", err);
-      }
-      return [];
-    }
-
-    // Scans the file for a line whose timestamp exactly matches candidateTs.
-    // Returns the index of the LAST such occurrence (to guard against
-    // duplicate same-second timestamps), or -1 if none found.
-    function findExactTimestampIndex(lines, candidateTs) {
-      let found = -1;
-      for (let i = 0; i < lines.length; i++) {
-        const ts = extractTimestamp(lines[i]);
-        if (ts && ts.getTime() === candidateTs.getTime()) found = i;
->>>>>>> d0bceddbf80428fcfbe8f73f0802657217a862b7
       }
       return found;
     }
@@ -181,7 +151,6 @@
       let startIndex = -1;
 
       if (OPT_AUTO.checked) {
-<<<<<<< HEAD
         // Match against the last recorded row's array[0], ignoring seconds
         // (matched at minute precision) against the input file's lines.
         const lastTs = await getLastRecordTimestamp();
@@ -195,29 +164,6 @@
 
         if (matchedIndex === -1) {
           setStatus("Could not find the last recorded timestamp in this file. Aborting — no file was processed.", "err");
-=======
-        // Try the last recorded timestamp; if that exact message isn't
-        // present in this file, step back through up to 5 recent records
-        // until one is actually found in the file.
-        const candidates = await getRecentTimestamps(5);
-
-        if (candidates.length === 0) {
-          setStatus("Could not determine any recent timestamp from the sheet (unreachable, empty, or unreadable). Aborting — no file was processed.", "err");
-          return;
-        }
-
-        let matchedIndex = -1;
-        for (const candidateTs of candidates) {
-          const foundIndex = findExactTimestampIndex(lines, candidateTs);
-          if (foundIndex !== -1) {
-            matchedIndex = foundIndex;
-            break;
-          }
-        }
-
-        if (matchedIndex === -1) {
-          setStatus(`Could not find any of the last ${candidates.length} recorded timestamps in this file. Aborting — no file was processed.`, "err");
->>>>>>> d0bceddbf80428fcfbe8f73f0802657217a862b7
           return;
         }
 
